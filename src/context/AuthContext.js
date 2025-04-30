@@ -26,22 +26,32 @@ export const AuthProvider = ({ children }) => {
     const getSession = async () => {
       try {
         setLoading(true);
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.getSession();
 
+        // Get session data
+        const { data, error } = await supabase.auth.getSession();
         if (error) {
-          throw error;
+          throw new Error(`Error getting session: ${error.message}`);
         }
 
+        const session = data?.session;
+        console.log("Session data: ", JSON.stringify(data));
+
+        // If a session exists
         if (session) {
           setSession(session);
           setUser(session.user);
 
           // Fetch user profile data including role
           const profile = await fetchUserProfile(session.user.id);
-          setUserProfile(profile);
+          console.log("User profile: ", JSON.stringify(profile));
+
+          if (profile) {
+            setUserProfile(profile);
+          } else {
+            console.log("No profile found for the user.");
+          }
+        } else {
+          console.log("No session found.");
         }
       } catch (error) {
         console.error("Error getting session:", error.message);
@@ -98,7 +108,6 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Sign up with email and password
-  // Sign up with email and password
   const signUp = async (email, password, name, role = "user") => {
     try {
       setLoading(true);
@@ -109,26 +118,33 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (authError) {
-        console.error("Supabase Auth Error:", authError.message);
+        console.error("Supabase Auth Error:", authError); // Log the entire error object
         return { success: false, error: authError.message };
       }
 
       const userId = authData?.user?.id || authData?.session?.user?.id;
 
       if (userId) {
-        const { error: profileError } = await supabase.from("users").insert([
-          {
-            id: userId,
-            name,
-            email,
-            role,
-            created_at: new Date(),
-          },
-        ]);
+        const profileData = {
+          id: userId,
+          name,
+          email,
+          role,
+          created_at: new Date().toISOString(),
+        };
+
+        console.log("profileData", profileData);
+
+        const { error: profileError } = await supabase
+          .from("users")
+          .insert([profileData]);
 
         if (profileError) {
-          console.error("Profile Insert Error:", profileError.message);
-          return { success: false, error: profileError.message };
+          console.error("Profile Insert Error:", profileError); // Log the entire error object
+          return {
+            success: false,
+            error: profileError?.message || JSON.stringify(profileError),
+          }; // Try to get a message or stringify the error
         }
       }
 
@@ -140,12 +156,12 @@ export const AuthProvider = ({ children }) => {
         };
       }
 
-      return { success: true, data: authData };
+      return { success: true, message: "Signup successful.", data: authData };
     } catch (error) {
-      console.error("Unexpected Signup Error:", error.message);
+      console.error("Unexpected Signup Error:", error); // Log the entire error object
       return {
         success: false,
-        error: error.message || "Unexpected error during signup.",
+        error: error?.message || "Unexpected error during signup.",
       };
     } finally {
       setLoading(false);

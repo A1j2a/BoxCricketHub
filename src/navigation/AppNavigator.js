@@ -16,7 +16,7 @@ export default function AppNavigator() {
     return <LoadingScreen />;
   }
 
-  console.log("userProfile", user);
+  console.log("userProfile", user, "userProfile", userProfile);
 
   return (
     <Stack.Navigator
@@ -26,6 +26,7 @@ export default function AppNavigator() {
     >
       {user ? (
         // If user is authenticated, check role and show appropriate navigator
+
         userProfile?.role === "admin" ? (
           <Stack.Screen name="AdminRoot" component={AdminNavigator} />
         ) : (

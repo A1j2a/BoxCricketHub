@@ -37,6 +37,7 @@ export default function SignupScreen({ navigation }) {
 
   // Get auth context
   const { signUp } = useAuth();
+  console.log("role", role);
 
   // Validate form inputs
   const validateInputs = () => {
@@ -99,19 +100,13 @@ export default function SignupScreen({ navigation }) {
       );
 
       if (!success) {
-        if (
-          error?.toLowerCase().includes("email address") &&
-          error?.includes("invalid")
-        ) {
-          setEmailError("The provided email is invalid.");
+        if (error?.toLowerCase().includes("email")) {
+          setEmailError("The provided email is invalid or already in use.");
         } else {
           setSignupError(error || "Signup failed. Please try again.");
         }
       } else {
-        // Show confirmation or navigate
-        if (message) {
-          Alert.alert("Signup Successful", message);
-        }
+        Alert.alert("Signup Successful", message || "Account created.");
         navigation.navigate("Login");
       }
     } catch (error) {
@@ -313,6 +308,7 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     width: "100%",
+    flex: 1,
   },
   input: {
     marginBottom: 5,
