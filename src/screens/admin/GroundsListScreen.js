@@ -1,206 +1,220 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, 
-  View, 
-  FlatList, 
-  TouchableOpacity, 
-  RefreshControl, 
-  Alert 
-} from 'react-native';
-import { 
-  Text, 
-  FAB, 
-  Card, 
-  Title, 
-  Paragraph, 
-  Button, 
-  IconButton, 
-  ActivityIndicator 
-} from 'react-native-paper';
-import { supabase } from '../../config/supabase';
-import { useAuth } from '../../context/AuthContext';
-import EmptyState from '../../components/EmptyState';
-import ErrorComponent from '../../components/ErrorComponent';
+import React, { useState, useEffect } from "react";
+import {
+  StyleSheet,
+  View,
+  FlatList,
+  TouchableOpacity,
+  RefreshControl,
+  Alert,
+  ScrollView,
+} from "react-native";
+import {
+  Text,
+  FAB,
+  Card,
+  Title,
+  Paragraph,
+  Button,
+  IconButton,
+  ActivityIndicator,
+} from "react-native-paper";
+import { supabase } from "../../config/supabase";
+import { useAuth } from "../../context/AuthContext";
+import EmptyState from "../../components/EmptyState";
+import ErrorComponent from "../../components/ErrorComponent";
 
 export default function GroundsListScreen({ navigation }) {
   const { user } = useAuth();
-  
+
   // State variables
   const [grounds, setGrounds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
-  
+
   // Fetch grounds owned by the current user
   const fetchGrounds = async () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const { data, error } = await supabase
-        .from('grounds')
-        .select('*')
-        .eq('owner_id', user.id)
-        .order('name');
-        
+        .from("grounds")
+        .select("*")
+        .eq("owner_id", user.id)
+        .order("name");
+
       if (error) throw error;
-      
+      console.log("====================================");
+      console.log("fetchGrounds", data);
+      console.log("====================================");
       setGrounds(data || []);
     } catch (error) {
-      console.error('Error fetching grounds:', error.message);
-      setError('Failed to load your grounds. Please try again.');
+      console.error("Error fetching grounds:", error.message);
+      setError("Failed to load your grounds. Please try again.");
     } finally {
       setLoading(false);
     }
   };
-  
+
   // Handle pull-to-refresh
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchGrounds();
     setRefreshing(false);
   };
-  
+
   // Initial fetch of grounds
   useEffect(() => {
     fetchGrounds();
-    
+
     // Subscribe to realtime changes for grounds
     const subscription = supabase
-      .channel('grounds_channel')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'grounds',
-        filter: `owner_id=eq.${user.id}`
-      }, (payload) => {
-        // Refresh grounds when changes occur
-        fetchGrounds();
-      })
+      .channel("grounds_channel")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "grounds",
+          filter: `owner_id=eq.${user.id}`,
+        },
+        (payload) => {
+          // Refresh grounds when changes occur
+          fetchGrounds();
+        }
+      )
       .subscribe();
-      
+
     // Cleanup subscription on unmount
     return () => {
       subscription.unsubscribe();
     };
   }, [user?.id]);
-  
+
   // Navigate to edit ground screen
   const handleEditGround = (ground) => {
-    navigation.navigate('AddEditGround', { 
+    navigation.navigate("AddEditGround", {
       groundId: ground.id,
-      ground
+      ground,
     });
   };
-  
+
   // Navigate to manage slots screen
   const handleManageSlots = (ground) => {
-    navigation.navigate('SlotsManagement', {
+    navigation.navigate("SlotsManagement", {
       groundId: ground.id,
-      groundName: ground.name
+      groundName: ground.name,
     });
   };
-  
+
   // Delete ground
   const handleDeleteGround = (groundId) => {
     Alert.alert(
-      'Delete Ground',
-      'Are you sure you want to delete this ground? This action cannot be undone.',
+      "Delete Ground",
+      "Are you sure you want to delete this ground? This action cannot be undone.",
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Delete',
-          style: 'destructive',
+          text: "Delete",
+          style: "destructive",
           onPress: async () => {
             try {
               setLoading(true);
-              
+
               // First check if there are any bookings for this ground's slots
               const { data: slots, error: slotsError } = await supabase
-                .from('slots')
-                .select('id')
-                .eq('ground_id', groundId);
-                
+                .from("slots")
+                .select("id")
+                .eq("ground_id", groundId);
+
               if (slotsError) throw slotsError;
-              
+
               if (slots && slots.length > 0) {
-                const slotIds = slots.map(slot => slot.id);
-                
+                const slotIds = slots.map((slot) => slot.id);
+
                 const { data: bookings, error: bookingsError } = await supabase
-                  .from('bookings')
-                  .select('id')
-                  .in('slot_id', slotIds)
-                  .not('status', 'eq', 'cancelled');
-                  
+                  .from("bookings")
+                  .select("id")
+                  .in("slot_id", slotIds)
+                  .not("status", "eq", "cancelled");
+
                 if (bookingsError) throw bookingsError;
-                
+
                 if (bookings && bookings.length > 0) {
                   Alert.alert(
-                    'Cannot Delete',
-                    'This ground has active bookings. Cancel all bookings before deleting the ground.',
-                    [{ text: 'OK' }]
+                    "Cannot Delete",
+                    "This ground has active bookings. Cancel all bookings before deleting the ground.",
+                    [{ text: "OK" }]
                   );
                   return;
                 }
-                
+
                 // Delete all slots for this ground
                 const { error: deleteSlotError } = await supabase
-                  .from('slots')
+                  .from("slots")
                   .delete()
-                  .eq('ground_id', groundId);
-                  
+                  .eq("ground_id", groundId);
+
                 if (deleteSlotError) throw deleteSlotError;
               }
-              
+
               // Delete the ground
               const { error: deleteGroundError } = await supabase
-                .from('grounds')
+                .from("grounds")
                 .delete()
-                .eq('id', groundId);
-                
+                .eq("id", groundId);
+
               if (deleteGroundError) throw deleteGroundError;
-              
+
               // Remove from local state
-              setGrounds(grounds.filter(ground => ground.id !== groundId));
-              
-              Alert.alert('Success', 'Ground deleted successfully');
+              setGrounds(grounds.filter((ground) => ground.id !== groundId));
+
+              Alert.alert("Success", "Ground deleted successfully");
             } catch (error) {
-              console.error('Error deleting ground:', error.message);
-              Alert.alert('Error', 'Failed to delete ground. Please try again.');
+              console.error("Error deleting ground:", error.message);
+              Alert.alert(
+                "Error",
+                "Failed to delete ground. Please try again."
+              );
             } finally {
               setLoading(false);
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
-  
+
   // Render ground card
   const renderGroundCard = ({ item }) => (
     <Card style={styles.card}>
-      <Card.Cover 
-        source={{ uri: item.image_url || 'https://via.placeholder.com/300x150?text=No+Image' }} 
+      <Card.Cover
+        source={{
+          uri:
+            item?.image_url ||
+            "https://via.placeholder.com/300x150?text=No+Image",
+        }}
         style={styles.cardImage}
       />
       <Card.Content style={styles.cardContent}>
-        <Title>{item.name}</Title>
-        <Paragraph style={styles.location}>{item.location}</Paragraph>
+        <Title>{item?.name}</Title>
+        <Paragraph style={styles?.location}>{item?.location}</Paragraph>
         <View style={styles.priceRow}>
-          <Text style={styles.price}>₹{item.price_per_hour}/hour</Text>
-          <Text style={styles.turfType}>{item.turf_type}</Text>
+          <Text style={styles.price}>₹{item?.price_per_hour}/hour</Text>
+          <Text style={styles.turfType}>{item?.turf_type}</Text>
         </View>
       </Card.Content>
       <Card.Actions style={styles.cardActions}>
-        <Button 
-          mode="outlined" 
+        <Button
+          mode="outlined"
           onPress={() => handleManageSlots(item)}
           icon="calendar"
         >
           Slots
         </Button>
-        <Button 
-          mode="outlined" 
+        <Button
+          mode="outlined"
           onPress={() => handleEditGround(item)}
           icon="pencil"
         >
@@ -215,7 +229,7 @@ export default function GroundsListScreen({ navigation }) {
       </Card.Actions>
     </Card>
   );
-  
+
   // Render loading state
   if (loading && !refreshing && grounds.length === 0) {
     return (
@@ -225,51 +239,68 @@ export default function GroundsListScreen({ navigation }) {
       </View>
     );
   }
-  
+
   // Render error state
   if (error) {
     return <ErrorComponent message={error} onRetry={fetchGrounds} />;
   }
-  
+
   // Render empty state
   if (!loading && grounds.length === 0) {
     return (
       <View style={styles.container}>
-        <EmptyState 
-          icon="cricket" 
+        <EmptyState
+          icon="cricket"
           title="No Grounds Yet"
           message="You haven't added any cricket grounds yet. Tap the + button to add your first ground."
           buttonText="Add Ground"
-          onButtonPress={() => navigation.navigate('AddEditGround')}
+          onButtonPress={() => navigation.navigate("AddEditGround")}
         />
         <FAB
           style={styles.fab}
           icon="plus"
-          onPress={() => navigation.navigate('AddEditGround')}
+          onPress={() => navigation.navigate("AddEditGround")}
         />
       </View>
     );
   }
-  
+
   return (
     <View style={styles.container}>
-      <FlatList
-        data={grounds}
+      {/* <FlatList
+        data={[
+          { id: "1", name: "Test Ground" },
+          { id: "2", name: "Another Ground" },
+        ]}
         renderItem={renderGroundCard}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.list}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={['#1E88E5']}
+            colors={["#1E88E5"]}
           />
         }
-      />
+      /> */}
+      <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#1E88E5"]}
+          />
+        }
+        contentContainerStyle={styles.list} // Apply list styles to ScrollView content
+      >
+        {grounds.map(
+          (item) => renderGroundCard(item) // Call renderGroundCard directly with item
+        )}
+      </ScrollView>
       <FAB
         style={styles.fab}
         icon="plus"
-        onPress={() => navigation.navigate('AddEditGround')}
+        onPress={() => navigation.navigate("AddEditGround")}
       />
     </View>
   );
@@ -278,17 +309,17 @@ export default function GroundsListScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#555',
+    color: "#555",
   },
   list: {
     padding: 16,
@@ -305,31 +336,31 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   location: {
-    color: '#666',
+    color: "#666",
     marginTop: 4,
   },
   priceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: 8,
   },
   price: {
-    fontWeight: 'bold',
-    color: '#1E88E5',
+    fontWeight: "bold",
+    color: "#1E88E5",
   },
   turfType: {
-    color: '#555',
-    fontStyle: 'italic',
+    color: "#555",
+    fontStyle: "italic",
   },
   cardActions: {
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
     paddingHorizontal: 8,
   },
   fab: {
-    position: 'absolute',
+    position: "absolute",
     margin: 16,
     right: 0,
     bottom: 0,
-    backgroundColor: '#1E88E5',
+    backgroundColor: "#1E88E5",
   },
 });

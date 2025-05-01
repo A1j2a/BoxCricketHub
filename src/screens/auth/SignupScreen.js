@@ -92,6 +92,7 @@ export default function SignupScreen({ navigation }) {
 
     try {
       setIsLoading(true);
+
       const { success, error, message } = await signUp(
         email,
         password,
@@ -105,10 +106,14 @@ export default function SignupScreen({ navigation }) {
         } else {
           setSignupError(error || "Signup failed. Please try again.");
         }
-      } else {
-        Alert.alert("Signup Successful", message || "Account created.");
-        navigation.navigate("Login");
+        return;
       }
+
+      Alert.alert(
+        "Signup Successful",
+        message || "Account created successfully."
+      );
+      navigation.navigate("Login");
     } catch (error) {
       console.error("Signup error:", error);
       setSignupError("An unexpected error occurred. Please try again.");

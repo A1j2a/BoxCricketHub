@@ -108,44 +108,23 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Sign up with email and password
-  const signUp = async (email, password, name, role = "user") => {
+  const signUp = async (email, password, name, role) => {
     try {
       setLoading(true);
-
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            name,
+            role, // this will be available as raw_user_meta_data.role
+          },
+        },
       });
 
       if (authError) {
-        console.error("Supabase Auth Error:", authError); // Log the entire error object
+        console.error("Supabase Auth Error:", authError);
         return { success: false, error: authError.message };
-      }
-
-      const userId = authData?.user?.id || authData?.session?.user?.id;
-
-      if (userId) {
-        const profileData = {
-          id: userId,
-          name,
-          email,
-          role,
-          created_at: new Date().toISOString(),
-        };
-
-        console.log("profileData", profileData);
-
-        const { error: profileError } = await supabase
-          .from("users")
-          .insert([profileData]);
-
-        if (profileError) {
-          console.error("Profile Insert Error:", profileError); // Log the entire error object
-          return {
-            success: false,
-            error: profileError?.message || JSON.stringify(profileError),
-          }; // Try to get a message or stringify the error
-        }
       }
 
       if (!authData?.session) {
@@ -158,7 +137,7 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true, message: "Signup successful.", data: authData };
     } catch (error) {
-      console.error("Unexpected Signup Error:", error); // Log the entire error object
+      console.error("Unexpected Signup Error:", error);
       return {
         success: false,
         error: error?.message || "Unexpected error during signup.",

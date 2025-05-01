@@ -6,6 +6,7 @@ import {
   RefreshControl,
   TouchableOpacity,
   Image,
+  ScrollView,
 } from "react-native";
 import {
   Searchbar,
@@ -239,7 +240,7 @@ export default function HomeScreen({ navigation }) {
         <FilterComponent filters={filters} setFilters={setFilters} />
       )}
 
-      <FlatList
+      {/* <FlatList
         data={filteredVenues || []}
         renderItem={({ item }) => (
           <VenueCard venue={item} onPress={() => handleVenuePress(item)} />
@@ -271,7 +272,50 @@ export default function HomeScreen({ navigation }) {
             />
           ) : null
         }
-      />
+      /> */}
+      <ScrollView
+        contentContainerStyle={[
+          styles.list,
+          filteredVenues?.length === 0 && styles.emptyList,
+        ]}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#1E88E5"]}
+          />
+        }
+      >
+        {filteredVenues?.length > 0 ? (
+          <Text style={styles.resultCount}>
+            {filteredVenues?.length}{" "}
+            {filteredVenues?.length === 1 ? "venue" : "venues"} found
+          </Text>
+        ) : (
+          <Text style={styles.emptyMessage}>No venues found.</Text>
+        )}
+
+        {filteredVenues?.map((item) => (
+          <VenueCard venue={item} onPress={() => handleVenuePress(item)} />
+        ))}
+
+        {loading && !refreshing && filteredVenues?.length > 0 && (
+          <ActivityIndicator
+            animating={true}
+            color="#1E88E5"
+            size="large"
+            style={styles.loader}
+          />
+        )}
+        {loading && !refreshing && filteredVenues?.length === 0 && (
+          <ActivityIndicator
+            animating={true}
+            color="#1E88E5"
+            size="large"
+            style={styles.loader}
+          />
+        )}
+      </ScrollView>
     </View>
   );
 }

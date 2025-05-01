@@ -1,3 +1,4 @@
+// config/supabase.js
 import { createClient } from "@supabase/supabase-js";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import "react-native-url-polyfill/auto";
@@ -28,7 +29,7 @@ export const fetchUserProfile = async (userId) => {
     console.log(`Fetching profile for user with ID: ${userId}`);
 
     const { data, error } = await supabase
-      .from("profiles") // Replace 'profiles' with the actual name of your profile table
+      .from("users") // Replace 'profiles' with the actual name of your profile table
       .select("*")
       .eq("id", userId) // Assuming your user ID column in the profile table is named 'id'
       .single();
