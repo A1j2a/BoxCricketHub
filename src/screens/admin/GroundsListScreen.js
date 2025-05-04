@@ -45,9 +45,6 @@ export default function GroundsListScreen({ navigation }) {
         .order("name");
 
       if (error) throw error;
-      console.log("====================================");
-      console.log("fetchGrounds", data);
-      console.log("====================================");
       setGrounds(data || []);
     } catch (error) {
       console.error("Error fetching grounds:", error.message);
@@ -187,48 +184,50 @@ export default function GroundsListScreen({ navigation }) {
   };
 
   // Render ground card
-  const renderGroundCard = ({ item }) => (
-    <Card style={styles.card}>
-      <Card.Cover
-        source={{
-          uri:
-            item?.image_url ||
-            "https://via.placeholder.com/300x150?text=No+Image",
-        }}
-        style={styles.cardImage}
-      />
-      <Card.Content style={styles.cardContent}>
-        <Title>{item?.name}</Title>
-        <Paragraph style={styles?.location}>{item?.location}</Paragraph>
-        <View style={styles.priceRow}>
-          <Text style={styles.price}>₹{item?.price_per_hour}/hour</Text>
-          <Text style={styles.turfType}>{item?.turf_type}</Text>
-        </View>
-      </Card.Content>
-      <Card.Actions style={styles.cardActions}>
-        <Button
-          mode="outlined"
-          onPress={() => handleManageSlots(item)}
-          icon="calendar"
-        >
-          Slots
-        </Button>
-        <Button
-          mode="outlined"
-          onPress={() => handleEditGround(item)}
-          icon="pencil"
-        >
-          Edit
-        </Button>
-        <IconButton
-          icon="delete"
-          color="#D32F2F"
-          size={20}
-          onPress={() => handleDeleteGround(item.id)}
+  const renderGroundCard = (item) => {
+    return (
+      <Card style={styles.card}>
+        <Card.Cover
+          source={{
+            uri:
+              item?.image_url ||
+              "https://via.placeholder.com/300x150?text=No+Image",
+          }}
+          style={styles.cardImage}
         />
-      </Card.Actions>
-    </Card>
-  );
+        <Card.Content style={styles.cardContent}>
+          <Title>{item?.name}</Title>
+          <Paragraph style={styles?.location}>{item?.location}</Paragraph>
+          <View style={styles.priceRow}>
+            <Text style={styles.price}>₹{item?.price_per_hour}/hour</Text>
+            <Text style={styles.turfType}>{item?.turf_type}</Text>
+          </View>
+        </Card.Content>
+        <Card.Actions style={styles.cardActions}>
+          <Button
+            mode="outlined"
+            onPress={() => handleManageSlots(item)}
+            icon="calendar"
+          >
+            Slots
+          </Button>
+          <Button
+            mode="outlined"
+            onPress={() => handleEditGround(item)}
+            icon="pencil"
+          >
+            Edit
+          </Button>
+          <IconButton
+            icon="delete"
+            color="#D32F2F"
+            size={20}
+            onPress={() => handleDeleteGround(item.id)}
+          />
+        </Card.Actions>
+      </Card>
+    );
+  };
 
   // Render loading state
   if (loading && !refreshing && grounds.length === 0) {
@@ -267,22 +266,21 @@ export default function GroundsListScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* <FlatList
-        data={[
+      <View style={styles.container}>
+        {/* Using map instead of FlatList */}
+        {[
           { id: "1", name: "Test Ground" },
           { id: "2", name: "Another Ground" },
-        ]}
-        renderItem={renderGroundCard}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.list}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={["#1E88E5"]}
-          />
-        }
-      /> */}
+        ].map((ground) => (
+          <View key={ground.id} style={styles.groundCard}>
+            <Text style={styles.groundName}>{ground.name}</Text>
+            {/* Add any other content to display for each ground */}
+          </View>
+        ))}
+
+        {/* Optionally, handle refreshing manually */}
+        {refreshing && <ActivityIndicator size="large" color="#1E88E5" />}
+      </View>
       <ScrollView
         refreshControl={
           <RefreshControl

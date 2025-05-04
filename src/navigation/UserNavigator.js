@@ -6,7 +6,7 @@ import HomeScreen from "../screens/user/HomeScreen";
 import VenueDetailScreen from "../screens/user/VenueDetailScreen";
 import BookingScreen from "../screens/user/BookingScreen";
 import MyBookingsScreen from "../screens/user/MyBookingsScreen";
-
+import ProfileScreen from "../screens/profile/ProfileScreen";
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
@@ -84,6 +84,24 @@ export default function UserNavigator() {
               color={color}
               size={size}
             />
+          ),
+          headerShown: true,
+          headerStyle: {
+            backgroundColor: "#1E88E5",
+          },
+          headerTintColor: "#fff",
+          headerTitleStyle: {
+            fontWeight: "bold",
+          },
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          tabBarLabel: "Profile",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="account" color={color} size={size} />
           ),
           headerShown: true,
           headerStyle: {

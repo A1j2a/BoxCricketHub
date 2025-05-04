@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }) => {
 
           // Fetch user profile data including role
           const profile = await fetchUserProfile(session.user.id);
-          console.log("User profile: ", JSON.stringify(profile));
+          console.log("User profile-: ", JSON.stringify(profile));
 
           if (profile) {
             setUserProfile(profile);

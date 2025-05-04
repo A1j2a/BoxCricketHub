@@ -6,7 +6,7 @@ import GroundsListScreen from "../screens/admin/GroundsListScreen";
 import AddEditGroundScreen from "../screens/admin/AddEditGroundScreen";
 import SlotsManagementScreen from "../screens/admin/SlotsManagementScreen";
 import BookingsManagementScreen from "../screens/admin/BookingsManagementScreen";
-
+import ProfileScreen from "../screens/profile/ProfileScreen";
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
@@ -96,6 +96,25 @@ export default function AdminNavigator() {
             fontWeight: "bold",
           },
           title: "Booking Requests",
+        }}
+      />
+
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          tabBarLabel: "Profile",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="account" color={color} size={size} />
+          ),
+          headerShown: true,
+          headerStyle: {
+            backgroundColor: "#1E88E5",
+          },
+          headerTintColor: "#fff",
+          headerTitleStyle: {
+            fontWeight: "bold",
+          },
         }}
       />
     </Tab.Navigator>

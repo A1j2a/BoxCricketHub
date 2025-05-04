@@ -24,6 +24,10 @@ import { supabase } from "../../config/supabase";
 import { useAuth } from "../../context/AuthContext";
 import ErrorComponent from "../../components/ErrorComponent";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import * as FileSystem from "expo-file-system";
+import { Buffer } from "buffer";
+
+import { decode as atob } from "base-64";
 
 export default function AddEditGroundScreen({ route, navigation }) {
   const { groundId, ground } = route.params || {};
@@ -142,8 +146,8 @@ export default function AddEditGroundScreen({ route, navigation }) {
     return isValid;
   };
 
-  // Pick image from gallery
   const pickImage = async () => {
+    // Request camera roll permission
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (status !== "granted") {
@@ -154,6 +158,7 @@ export default function AddEditGroundScreen({ route, navigation }) {
       return;
     }
 
+    // Open the image picker
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -161,46 +166,116 @@ export default function AddEditGroundScreen({ route, navigation }) {
       quality: 0.8,
     });
 
+    // If the user picks an image (and not cancelled)
     if (!result.canceled) {
-      setImageUri(result.assets[0].uri);
+      const imageUri = result.assets[0].uri;
+
+      // Check if the file exists before proceeding
+      const fileInfo = await FileSystem.getInfoAsync(imageUri);
+
+      if (!fileInfo.exists) {
+        Alert.alert("Error", "The selected file is not accessible.");
+        return;
+      }
+
+      // Set the image URI to state
+      setImageUri(imageUri);
       setImageChanged(true);
+
+      // Optionally upload the image to Supabase or your storage system
+      try {
+        const uploadedImageUrl = await uploadImage(imageUri, user.id);
+        console.log("Image uploaded successfully:", uploadedImageUrl);
+      } catch (error) {
+        console.error("Error uploading image:", error.message);
+        Alert.alert("Error", "Failed to upload image.");
+      }
     }
   };
 
   // Upload image to Supabase storage
-  const uploadImage = async () => {
-    if (!imageUri || !imageChanged) {
-      return imageUri; // Return existing image URL if not changed
+
+  const uploadImage = async (imageUri, userId) => {
+    if (!imageUri) {
+      console.error("No image URI provided");
+      return null;
     }
 
     try {
-      // Convert URI to blob
-      const response = await fetch(imageUri);
-      const blob = await response.blob();
+      // Check if imageUri is a local file
+      if (imageUri.startsWith("file://")) {
+        // Read the image file from the device storage
+        const filePath = imageUri.replace("file://", "");
 
-      // Generate a unique filename
-      const fileExt = imageUri.split(".").pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `grounds/${user.id}/${fileName}`;
-      console.log("====================================");
-      console.log("filePath", filePath, "blob", blob);
-      console.log("====================================");
-      // Upload to Supabase Storage (make sure 'images' is your actual bucket name)
-      const { data, error } = await supabase.storage
-        .from("images") // This should match the bucket name you created
-        .upload(filePath, blob, {
-          cacheControl: "3600",
-          upsert: true,
+        const fileData = await FileSystem.readAsStringAsync(filePath, {
+          encoding: FileSystem.EncodingType.Base64,
         });
 
-      if (error) throw error;
+        // Convert the base64 data to a blob
+        const blob = new Blob(
+          [new Uint8Array(Buffer.from(fileData, "base64"))],
+          {
+            type: "image/jpeg",
+          }
+        );
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from("images")
-        .getPublicUrl(filePath);
+        const fileExt = imageUri.split(".").pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        const uploadPath = `grounds/${userId}/${fileName}`;
 
-      return urlData.publicUrl;
+        console.log("Uploading image to path:", uploadPath);
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("images")
+          .upload(uploadPath, blob, {
+            cacheControl: "3600",
+            upsert: true,
+          });
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        const { data: urlData, error: urlError } = supabase.storage
+          .from("images")
+          .getPublicUrl(uploadPath);
+
+        if (urlError || !urlData?.publicUrl) {
+          throw new Error("Failed to get public URL.");
+        }
+
+        return urlData.publicUrl;
+      } else {
+        // Handle non-local image URLs (e.g., remote images)
+        const response = await fetch(imageUri);
+        const blob = await response.blob();
+        const fileExt = imageUri.split(".").pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        const uploadPath = `grounds/${userId}/${fileName}`;
+
+        console.log("Uploading image to path:", uploadPath);
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("images")
+          .upload(uploadPath, blob, {
+            cacheControl: "3600",
+            upsert: true,
+          });
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        const { data: urlData, error: urlError } = supabase.storage
+          .from("images")
+          .getPublicUrl(uploadPath);
+
+        if (urlError || !urlData?.publicUrl) {
+          throw new Error("Failed to get public URL.");
+        }
+
+        return urlData.publicUrl;
+      }
     } catch (error) {
       console.error("Error uploading image:", error.message);
       throw error;
@@ -214,10 +289,20 @@ export default function AddEditGroundScreen({ route, navigation }) {
     try {
       setLoading(true);
 
-      // Upload image if changed or new
+      // Get current authenticated user
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        Alert.alert("Error", "User not authenticated.");
+        return;
+      }
+
       let imageUrl = imageUri;
       if (imageUri && imageChanged) {
-        imageUrl = await uploadImage();
+        imageUrl = await uploadImage(imageUri, user.id);
       }
 
       const groundData = {

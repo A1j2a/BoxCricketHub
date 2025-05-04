@@ -33,31 +33,38 @@ export default function MyBookingsScreen({ navigation }) {
   const [error, setError] = useState(null);
 
   // Fetch user's bookings
-  const fetchBookings = async () => {
+  const fetchBookings = async (groundId) => {
     try {
       setLoading(true);
       setError(null);
 
-      if (!user) return;
+      if (!groundId) return;
 
-      // Fetch bookings with related slots and grounds data
+      // Fetch slots for the specific ground_id, and explicitly join the grounds table
       const { data, error } = await supabase
-        .from("bookings")
+        .from("slots")
         .select(
           `
-          *,
-          slots(*, grounds(*))
+          id,
+          ground_id,
+          start_time,
+          end_time,
+          is_booked,
+          created_at,
+          updated_at,
+          date,
+          grounds(id, name)  // Explicitly reference the fields of grounds to avoid ambiguity
         `
         )
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+        .eq("ground_id", groundId) // Filter slots based on ground_id
+        .order("start_time", { ascending: true }); // Example ordering by start_time
 
       if (error) throw error;
 
-      setBookings(data || []);
+      setSlots(data || []);
     } catch (error) {
-      console.error("Error fetching bookings: user", error.message);
-      setError("Failed to load your bookings. Please try again.");
+      console.error("Error fetching slots for ground:", error.message);
+      setError("Failed to load slots. Please try again.");
     } finally {
       setLoading(false);
     }

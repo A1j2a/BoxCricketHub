@@ -24,28 +24,27 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 });
 
 // Helper functions for Supabase operations
-export const fetchUserProfile = async (userId) => {
+export const fetchUserProfile = async () => {
   try {
-    console.log(`Fetching profile for user with ID: ${userId}`);
+    const { data, error } = await supabase.auth.getUser();
 
-    const { data, error } = await supabase
-      .from("users") // Replace 'profiles' with the actual name of your profile table
-      .select("*")
-      .eq("id", userId) // Assuming your user ID column in the profile table is named 'id'
-      .single();
-
-    if (error) {
-      console.error("Error fetching user profile:", error.message);
+    if (error || !data?.user) {
+      console.error("Failed to get authenticated user:", error?.message);
       return null;
     }
 
-    console.log("Fetched profile data:", data);
-    return data;
-  } catch (error) {
-    console.error("Error fetching user profile:", error.message);
+    const user = data.user;
+    console.log("Fetched profile data from auth:", user);
+
+    // You can structure the returned profile however you need
+    return user?.user_metadata || null;
+  } catch (err) {
+    console.error("Unexpected error in fetchUserProfile:", err.message);
     return null;
   }
 };
+
+
 
 export const uploadImage = async (uri, bucketName, fileName) => {
   try {

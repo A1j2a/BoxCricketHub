@@ -16,7 +16,7 @@ export default function AppNavigator() {
     return <LoadingScreen />;
   }
 
-  console.log("userProfile", userProfile?.role);
+  console.log("userProfile-", userProfile);
 
   return (
     <Stack.Navigator
