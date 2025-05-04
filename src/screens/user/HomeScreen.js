@@ -43,15 +43,15 @@ export default function HomeScreen({ navigation }) {
     turfType: "",
   });
 
-  // Fetch venues from Supabase
   const fetchVenues = async () => {
     try {
       setLoading(true);
       setError(null);
 
+      // Fetch all venues (grounds) including the user_id column
       const { data, error } = await supabase
         .from("grounds")
-        .select("*, users(name)")
+        .select("id, name, location, price_per_hour, turf_type, user_id")
         .order("name");
 
       if (error) {
@@ -68,6 +68,9 @@ export default function HomeScreen({ navigation }) {
       setLoading(false);
     }
   };
+  
+  
+  
 
   // Handle pull-to-refresh
   const onRefresh = async () => {

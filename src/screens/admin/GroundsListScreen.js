@@ -266,21 +266,6 @@ export default function GroundsListScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.container}>
-        {/* Using map instead of FlatList */}
-        {[
-          { id: "1", name: "Test Ground" },
-          { id: "2", name: "Another Ground" },
-        ].map((ground) => (
-          <View key={ground.id} style={styles.groundCard}>
-            <Text style={styles.groundName}>{ground.name}</Text>
-            {/* Add any other content to display for each ground */}
-          </View>
-        ))}
-
-        {/* Optionally, handle refreshing manually */}
-        {refreshing && <ActivityIndicator size="large" color="#1E88E5" />}
-      </View>
       <ScrollView
         refreshControl={
           <RefreshControl
