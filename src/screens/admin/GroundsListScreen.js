@@ -31,6 +31,7 @@ export default function GroundsListScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [firstLoad, setFirstLoad] = useState(true); // Track first load
 
   // Fetch grounds owned by the current user
   const fetchGrounds = async () => {
@@ -61,9 +62,12 @@ export default function GroundsListScreen({ navigation }) {
     setRefreshing(false);
   };
 
-  // Initial fetch of grounds
+  // Initial fetch of grounds, only trigger when firstLoad is true
   useEffect(() => {
-    fetchGrounds();
+    if (firstLoad) {
+      fetchGrounds();
+      setFirstLoad(false); // Set first load to false after the initial fetch
+    }
 
     // Subscribe to realtime changes for grounds
     const subscription = supabase
@@ -87,7 +91,7 @@ export default function GroundsListScreen({ navigation }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [user?.id]);
+  }, [user?.id, firstLoad]); // Now only fetch if firstLoad is true
 
   // Navigate to edit ground screen
   const handleEditGround = (ground) => {
