@@ -164,36 +164,51 @@ export default function SlotsManagementScreen({ route, navigation }) {
     return true;
   };
   
-  // Add new slot
+  const formatToTimestamp = (date, hour) => {
+    const paddedHour = hour.toString().padStart(2, "0");
+    return `${date}T${paddedHour}:00:00`; // Format: YYYY-MM-DDTHH:MM:SS
+  };
+
   const addSlot = async () => {
     if (!validateTimeInputs()) return;
-    
+
     try {
       setLoading(true);
-      
-      const { data, error } = await supabase
-        .from('slots')
-        .insert([
-          {
-            ground_id: groundId,
-            date: selectedDate,
-            start_time: startTime,
-            end_time: endTime,
-            is_booked: false
-          }
-        ]);
-        
+
+      const formattedStart = formatToTimestamp(selectedDate, startTime);
+      const formattedEnd = formatToTimestamp(selectedDate, endTime);
+
+      console.log("Adding slot:", {
+        ground_id: groundId,
+        date: selectedDate,
+        start_time: formattedStart,
+        end_time: formattedEnd,
+        is_booked: false,
+      });
+
+      const { data, error } = await supabase.from("slots").insert([
+        {
+          ground_id: groundId,
+          date: selectedDate, // keep date as YYYY-MM-DD
+          start_time: formattedStart, // now full ISO string
+          end_time: formattedEnd,
+          is_booked: false,
+        },
+      ]);
+
       if (error) throw error;
-      
+
       await fetchSlots();
       hideDialog();
     } catch (error) {
-      console.error('Error adding slot:', error.message);
-      Alert.alert('Error', 'Failed to add slot. Please try again.');
+      console.error("Error adding slot:", error.message);
+      Alert.alert("Error", "Failed to add slot. Please try again.");
     } finally {
       setLoading(false);
     }
   };
+  
+  
   
   // Delete a slot
   const deleteSlot = async (slotId, hasBookings) => {

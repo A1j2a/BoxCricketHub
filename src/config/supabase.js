@@ -4,14 +4,19 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import "react-native-url-polyfill/auto";
 
 // Supabase configuration
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || "";
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || "";
+const supabaseUrl =
+  process.env.EXPO_PUBLIC_SUPABASE_URL ||
+  "https://vdqjojgsggzlgqezhyzf.supabase.co";
+const supabaseAnonKey =
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkcWpvamdzZ2d6bGdxZXpoeXpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYwMDQzNTIsImV4cCI6MjA2MTU4MDM1Mn0.7oXD60fn92F5xmPt8KcvWeOLH2A-cxCWFVDvO-Dfi3g";
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error(
     "Missing Supabase credentials. Please check your environment variables."
   );
 }
+
 
 // Initialize the Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -34,7 +39,6 @@ export const fetchUserProfile = async () => {
     }
 
     const user = data.user;
-    console.log("Fetched profile data from auth:", user);
 
     // You can structure the returned profile however you need
     return user?.user_metadata || null;

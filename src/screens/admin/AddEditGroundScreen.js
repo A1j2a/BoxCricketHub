@@ -146,54 +146,70 @@ export default function AddEditGroundScreen({ route, navigation }) {
     return isValid;
   };
 
+  // Function to pick an image from the gallery
   const pickImage = async () => {
-    // Request camera roll permission
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    try {
+      // Request permission to access media library
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    if (status !== "granted") {
-      Alert.alert(
-        "Permission Denied",
-        "We need camera roll permission to upload images."
-      );
-      return;
-    }
-
-    // Open the image picker
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [16, 9],
-      quality: 0.8,
-    });
-
-    // If the user picks an image (and not cancelled)
-    if (!result.canceled) {
-      const imageUri = result.assets[0].uri;
-
-      // Check if the file exists before proceeding
-      const fileInfo = await FileSystem.getInfoAsync(imageUri);
-
-      if (!fileInfo.exists) {
-        Alert.alert("Error", "The selected file is not accessible.");
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Denied",
+          "We need access to your photo library to upload images."
+        );
         return;
       }
 
-      // Set the image URI to state
-      setImageUri(imageUri);
-      setImageChanged(true);
+      // Launch image picker to select an image
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 0.8,
+      });
 
-      // Optionally upload the image to Supabase or your storage system
-      try {
-        const uploadedImageUrl = await uploadImage(imageUri, user.id);
-        console.log("Image uploaded successfully:", uploadedImageUrl);
-      } catch (error) {
-        console.error("Error uploading image:", error.message);
-        Alert.alert("Error", "Failed to upload image.");
+      if (!result.canceled && result.assets.length > 0) {
+        const imageUri = result.assets[0].uri;
+        console.log("Selected image URI:", imageUri);
+
+        // Ensure the file exists
+        const fileInfo = await FileSystem.getInfoAsync(imageUri);
+        if (!fileInfo.exists) {
+          Alert.alert("Error", "The selected file is not accessible.");
+          return;
+        }
+
+        // Copy image to a safe location (Document directory)
+        const fileName = imageUri.split("/").pop();
+        const newPath = FileSystem.documentDirectory + fileName;
+
+        await FileSystem.copyAsync({
+          from: imageUri,
+          to: newPath,
+        });
+
+        // Set image URI to state
+        setImageUri(newPath);
+        setImageChanged(true);
+
+        // Upload image (pass the newPath as imageUri to uploadImage function)
+        try {
+          const uploadedImageUrl = await uploadImage(newPath, user.id);
+          console.log("Image uploaded successfully:", uploadedImageUrl);
+        } catch (uploadError) {
+          console.error("Error uploading image:", uploadError.message);
+          Alert.alert("Error", "Failed to upload image.");
+        }
       }
+    } catch (err) {
+      console.error("Unexpected error in pickImage:", err.message);
+      Alert.alert("Error", "Something went wrong while picking the image.");
     }
   };
 
-  // Upload image to Supabase storage
+  // Function to upload the image to Supabase (without using Blob)
+  // You may need to install this
 
   const uploadImage = async (imageUri, userId) => {
     if (!imageUri) {
@@ -202,83 +218,46 @@ export default function AddEditGroundScreen({ route, navigation }) {
     }
 
     try {
-      // Check if imageUri is a local file
-      if (imageUri.startsWith("file://")) {
-        // Read the image file from the device storage
-        const filePath = imageUri.replace("file://", "");
+      const fileExt = imageUri.split(".").pop()?.split(/\#|\?/)[0] || "jpg";
+      const fileName = `${Date.now()}.${fileExt}`;
+      const uploadPath = `grounds/${userId}/${fileName}`;
 
-        const fileData = await FileSystem.readAsStringAsync(filePath, {
-          encoding: FileSystem.EncodingType.Base64,
+      // Read base64 string
+      const base64 = await FileSystem.readAsStringAsync(imageUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      // Convert base64 to binary
+      const byteArray = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+
+      // Upload the byteArray as binary file
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("images")
+        .upload(uploadPath, byteArray, {
+          contentType: `image/${fileExt}`,
+          upsert: true,
+          cacheControl: "3600",
         });
 
-        // Convert the base64 data to a blob
-        const blob = new Blob(
-          [new Uint8Array(Buffer.from(fileData, "base64"))],
-          {
-            type: "image/jpeg",
-          }
-        );
-
-        const fileExt = imageUri.split(".").pop();
-        const fileName = `${Date.now()}.${fileExt}`;
-        const uploadPath = `grounds/${userId}/${fileName}`;
-
-        console.log("Uploading image to path:", uploadPath);
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("images")
-          .upload(uploadPath, blob, {
-            cacheControl: "3600",
-            upsert: true,
-          });
-
-        if (uploadError) {
-          throw uploadError;
-        }
-
-        const { data: urlData, error: urlError } = supabase.storage
-          .from("images")
-          .getPublicUrl(uploadPath);
-
-        if (urlError || !urlData?.publicUrl) {
-          throw new Error("Failed to get public URL.");
-        }
-
-        return urlData.publicUrl;
-      } else {
-        // Handle non-local image URLs (e.g., remote images)
-        const response = await fetch(imageUri);
-        const blob = await response.blob();
-        const fileExt = imageUri.split(".").pop();
-        const fileName = `${Date.now()}.${fileExt}`;
-        const uploadPath = `grounds/${userId}/${fileName}`;
-
-        console.log("Uploading image to path:", uploadPath);
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("images")
-          .upload(uploadPath, blob, {
-            cacheControl: "3600",
-            upsert: true,
-          });
-
-        if (uploadError) {
-          throw uploadError;
-        }
-
-        const { data: urlData, error: urlError } = supabase.storage
-          .from("images")
-          .getPublicUrl(uploadPath);
-
-        if (urlError || !urlData?.publicUrl) {
-          throw new Error("Failed to get public URL.");
-        }
-
-        return urlData.publicUrl;
+      if (uploadError) {
+        throw uploadError;
       }
+
+      // Get public URL
+      const { data: urlData, error: urlError } = supabase.storage
+        .from("images")
+        .getPublicUrl(uploadPath);
+
+      if (urlError || !urlData?.publicUrl) {
+        throw new Error("Failed to get public URL.");
+      }
+
+      console.log("✅ Uploaded URL:", urlData.publicUrl);
+      return urlData.publicUrl;
     } catch (error) {
-      console.error("Error uploading image:", error.message);
-      throw error;
+      console.error("❌ Upload Error:", error.message);
+      Alert.alert("Upload Error", error.message);
+      return null;
     }
   };
 

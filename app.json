@@ -9,7 +9,10 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.patidaraj.BoxCricketHub"
+      "bundleIdentifier": "com.patidaraj.BoxCricketHub",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "We need access to your photo library to upload images."
+      }
     },
     "android": {
       "versionCode": 4,

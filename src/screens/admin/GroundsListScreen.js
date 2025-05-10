@@ -184,9 +184,9 @@ export default function GroundsListScreen({ navigation }) {
   };
 
   // Render ground card
-  const renderGroundCard = (item) => {
+  const renderGroundCard = (item, i) => {
     return (
-      <Card style={styles.card}>
+      <Card style={styles.card} key={i}>
         <Card.Cover
           source={{
             uri:
@@ -274,12 +274,15 @@ export default function GroundsListScreen({ navigation }) {
             colors={["#1E88E5"]}
           />
         }
-        contentContainerStyle={styles.list} // Apply list styles to ScrollView content
+        contentContainerStyle={styles.list}
       >
-        {grounds.map(
-          (item) => renderGroundCard(item) // Call renderGroundCard directly with item
-        )}
+        {grounds.map((item, index) => (
+          <React.Fragment key={item.id || index}>
+            {renderGroundCard(item)}
+          </React.Fragment>
+        ))}
       </ScrollView>
+
       <FAB
         style={styles.fab}
         icon="plus"

@@ -34,7 +34,6 @@ export const AuthProvider = ({ children }) => {
         }
 
         const session = data?.session;
-        console.log("Session data: ", JSON.stringify(data));
 
         // If a session exists
         if (session) {
@@ -43,7 +42,6 @@ export const AuthProvider = ({ children }) => {
 
           // Fetch user profile data including role
           const profile = await fetchUserProfile(session.user.id);
-          console.log("User profile-: ", JSON.stringify(profile));
 
           if (profile) {
             setUserProfile(profile);
