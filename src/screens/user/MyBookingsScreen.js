@@ -17,7 +17,7 @@ import {
 } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { supabase } from "../../config/supabase";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/AuthProvider";
 import BookingItem from "../../components/BookingItem";
 import EmptyState from "../../components/EmptyState";
 import ErrorComponent from "../../components/ErrorComponent";

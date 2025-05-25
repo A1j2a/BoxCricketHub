@@ -16,7 +16,7 @@ import {
   HelperText,
   Divider,
 } from "react-native-paper";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/AuthProvider";
 import { StatusBar } from "expo-status-bar";
 
 export default function LoginScreen({ navigation }) {

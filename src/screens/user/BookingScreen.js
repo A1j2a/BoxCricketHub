@@ -19,7 +19,7 @@ import {
 } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { supabase } from "../../config/supabase";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/AuthProvider";
 import dayjs from "dayjs";
 
 export default function BookingScreen({ route, navigation }) {

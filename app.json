@@ -1,53 +1,38 @@
 {
   "expo": {
-    "name": "BoxCricketHub",
-    "slug": "BoxCricketHub",
+    "name": "BoxCricketApp",
+    "slug": "BoxCricketApp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
-    "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.patidaraj.BoxCricketHub",
+      "bundleIdentifier": "com.patidaraj.BoxCricketApp",
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "We need access to your photo library to upload images."
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "versionCode": 4,
-      "package": "com.patidaraj.BoxCricketHub",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.patidaraj.BoxCricketApp"
     },
     "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
-    },
-    "plugins": [
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
-        }
-      ]
-    ],
-    "experiments": {
-      "typedRoutes": true
+      "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "router": {
-        "origin": false
-      },
       "eas": {
-        "projectId": "16eaaa56-a040-439c-a08a-e708a34ab6df"
+        "projectId": "05095a96-a636-4fe6-9a55-2b94479dcd5f"
       }
     }
   }

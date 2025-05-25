@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
 } from "react-native-paper";
 import { supabase } from "../../config/supabase";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/AuthProvider";
 
 export default function ProfileScreen({ navigation }) {
   const { user, signOut } = useAuth();
@@ -39,7 +39,7 @@ export default function ProfileScreen({ navigation }) {
         email: currentUser?.email || "",
       });
     } catch (err) {
-      console.error("Error fetching user :", err.message);
+      console.error("Error fetching user:", err.message);
       setError("Failed to load profile data. Please try again.");
     } finally {
       setLoading(false);
@@ -94,7 +94,6 @@ export default function ProfileScreen({ navigation }) {
           onPress: async () => {
             try {
               setLoading(true);
-              // Note: This needs service role access in Supabase!
               const { error } = await supabase.auth.admin.deleteUser(user.id);
               if (error) throw error;
 
@@ -201,6 +200,14 @@ export default function ProfileScreen({ navigation }) {
           >
             Delete Account
           </Button>
+
+          <Button
+            mode="text"
+            onPress={() => navigation.navigate("PrivacyPolicy")}
+            style={{ marginTop: 16 }}
+          >
+            Privacy Policy
+          </Button>
         </Card.Content>
       </Card>
     </ScrollView>
@@ -220,7 +227,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "bold",
     marginBottom: 24,
     color: "#333",

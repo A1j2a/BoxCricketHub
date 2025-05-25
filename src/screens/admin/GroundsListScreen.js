@@ -19,7 +19,7 @@ import {
   ActivityIndicator,
 } from "react-native-paper";
 import { supabase } from "../../config/supabase";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/AuthProvider";
 import EmptyState from "../../components/EmptyState";
 import ErrorComponent from "../../components/ErrorComponent";
 

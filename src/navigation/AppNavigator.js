@@ -4,7 +4,7 @@ import AuthNavigator from "./AuthNavigator";
 import UserNavigator from "./UserNavigator";
 import AdminNavigator from "./AdminNavigator";
 import LoadingScreen from "../components/LoadingScreen";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/AuthProvider";
 
 const Stack = createStackNavigator();
 
@@ -15,8 +15,6 @@ export default function AppNavigator() {
   if (loading) {
     return <LoadingScreen />;
   }
-
-
 
   return (
     <Stack.Navigator

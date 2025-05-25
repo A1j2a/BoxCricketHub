@@ -18,7 +18,7 @@ import {
   IconButton,
   ActivityIndicator,
 } from "react-native-paper";
-import { useAuth } from "../../context/AuthContext"; // Make sure this is correctly implemented
+import { useAuth } from "../../context/AuthProvider"; // Make sure this is correctly implemented
 import { supabase } from "../../config/supabase";
 import VenueCard from "../../components/VenueCard";
 import FilterComponent from "../../components/FilterComponent";
@@ -68,9 +68,6 @@ export default function HomeScreen({ navigation }) {
       setLoading(false);
     }
   };
-  
-  
-  
 
   // Handle pull-to-refresh
   const onRefresh = async () => {

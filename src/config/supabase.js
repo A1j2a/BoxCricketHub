@@ -16,7 +16,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
     "Missing Supabase credentials. Please check your environment variables."
   );
 }
-
+console.log("Supabase URL:", supabaseUrl);
+console.log("Supabase Anon Key:", supabaseAnonKey);
 
 // Initialize the Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -47,8 +48,6 @@ export const fetchUserProfile = async () => {
     return null;
   }
 };
-
-
 
 export const uploadImage = async (uri, bucketName, fileName) => {
   try {

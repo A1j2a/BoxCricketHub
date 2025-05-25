@@ -7,6 +7,7 @@ import {
   Platform,
   ScrollView,
   Image,
+  Alert,
 } from "react-native";
 import {
   TextInput,
@@ -17,7 +18,7 @@ import {
   Divider,
   RadioButton,
 } from "react-native-paper";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/AuthProvider";
 
 export default function SignupScreen({ navigation }) {
   // State for form inputs and validation

@@ -7,10 +7,12 @@ import AddEditGroundScreen from "../screens/admin/AddEditGroundScreen";
 import SlotsManagementScreen from "../screens/admin/SlotsManagementScreen";
 import BookingsManagementScreen from "../screens/admin/BookingsManagementScreen";
 import ProfileScreen from "../screens/profile/ProfileScreen";
+import PrivacyPolicyScreen from "../screens/profile/PrivacyPolicyScreen"; // ✅ Import
+
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
-// Stack navigator for the grounds management
+// ✅ Stack navigator for the grounds management
 function GroundsStack() {
   return (
     <Stack.Navigator
@@ -47,7 +49,31 @@ function GroundsStack() {
   );
 }
 
-// Main tab navigator for admin
+// ✅ Stack navigator for the Profile tab (for Admin)
+function ProfileStack() {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: "#1E88E5" },
+        headerTintColor: "#fff",
+        headerTitleStyle: { fontWeight: "bold" },
+      }}
+    >
+      <Stack.Screen
+        name="ProfileMain"
+        component={ProfileScreen}
+        options={{ title: "Profile" }}
+      />
+      <Stack.Screen
+        name="PrivacyPolicy"
+        component={PrivacyPolicyScreen}
+        options={{ title: "Privacy Policy" }}
+      />
+    </Stack.Navigator>
+  );
+}
+
+// ✅ Main tab navigator for admin
 export default function AdminNavigator() {
   return (
     <Tab.Navigator
@@ -98,23 +124,14 @@ export default function AdminNavigator() {
           title: "Booking Requests",
         }}
       />
-
       <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
+        name="ProfileTab"
+        component={ProfileStack} // ✅ Stack instead of single screen
         options={{
           tabBarLabel: "Profile",
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="account" color={color} size={size} />
           ),
-          headerShown: true,
-          headerStyle: {
-            backgroundColor: "#1E88E5",
-          },
-          headerTintColor: "#fff",
-          headerTitleStyle: {
-            fontWeight: "bold",
-          },
         }}
       />
     </Tab.Navigator>

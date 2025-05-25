@@ -21,7 +21,7 @@ import {
 } from "react-native-paper";
 import * as ImagePicker from "expo-image-picker";
 import { supabase } from "../../config/supabase";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/AuthProvider";
 import ErrorComponent from "../../components/ErrorComponent";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system";
