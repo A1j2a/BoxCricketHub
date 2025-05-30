@@ -25,13 +25,14 @@ function HomeStack() {
       <Stack.Screen
         name="Home"
         component={HomeScreen}
-        options={{ title: "Cricket Venues" }}
+        options={{ title: "Cricket Venues", headerShown: false }}
       />
       <Stack.Screen
         name="VenueDetail"
         component={VenueDetailScreen}
         options={({ route }) => ({
           title: route.params?.venueName || "Venue Details",
+          headerShown: route.params?.venueName ? false : true,
         })}
       />
       <Stack.Screen

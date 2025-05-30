@@ -17,15 +17,25 @@ import {
   Divider,
   IconButton,
   ActivityIndicator,
+  Card,
+  Surface,
 } from "react-native-paper";
-import { useAuth } from "../../context/AuthProvider"; // Make sure this is correctly implemented
+import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import { supabase } from "../../config/supabase";
 import VenueCard from "../../components/VenueCard";
 import FilterComponent from "../../components/FilterComponent";
 import EmptyState from "../../components/EmptyState";
 import ErrorComponent from "../../components/ErrorComponent";
+import ModernHeader from "../../components/ui/ModernHeader";
+import SearchBar from "../../components/ui/SearchBar";
+import ThemedButton from "../../components/ui/ThemedButton";
+import GradientBackground from "../../components/ui/GradientBackground";
 
 export default function HomeScreen({ navigation }) {
+  const { user, userProfile } = useAuth();
+  const { theme } = useTheme();
+
   // State variables
   const [venues, setVenues] = useState([]);
   const [filteredVenues, setFilteredVenues] = useState([]);
@@ -43,22 +53,19 @@ export default function HomeScreen({ navigation }) {
     turfType: "",
   });
 
+  // Fetch venues from Supabase
   const fetchVenues = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Fetch all venues (grounds) including the user_id column
       const { data, error } = await supabase
         .from("grounds")
-        .select("id, name, location, price_per_hour, turf_type, user_id")
+        .select("*, users(name)")
         .order("name");
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
-      // Ensure data is always an array, even if empty
       setVenues(data || []);
       setFilteredVenues(data || []);
     } catch (error) {
@@ -83,54 +90,51 @@ export default function HomeScreen({ navigation }) {
 
   // Search and filter venues
   useEffect(() => {
-    // Initialize results as an empty array.  This is CRUCIAL.
-    let results = [];
+    if (venues.length === 0) return;
 
-    // Only filter if there is data.
-    if (venues && venues.length > 0) {
-      results = [...venues];
+    let results = [...venues];
 
-      // Apply search query
-      if (searchQuery) {
-        const lowercasedQuery = searchQuery.toLowerCase();
-        results = results.filter(
-          (venue) =>
-            venue.name.toLowerCase().includes(lowercasedQuery) ||
-            venue.location.toLowerCase().includes(lowercasedQuery) ||
-            venue.turf_type.toLowerCase().includes(lowercasedQuery)
-        );
-      }
-
-      // Apply location filter
-      if (filters.location) {
-        results = results.filter((venue) =>
-          venue.location.toLowerCase().includes(filters.location.toLowerCase())
-        );
-      }
-
-      // Apply price range filter
-      if (filters.priceMin) {
-        results = results.filter(
-          (venue) =>
-            parseFloat(venue.price_per_hour) >= parseFloat(filters.priceMin)
-        );
-      }
-
-      if (filters.priceMax) {
-        results = results.filter(
-          (venue) =>
-            parseFloat(venue.price_per_hour) <= parseFloat(filters.priceMax)
-        );
-      }
-
-      // Apply turf type filter
-      if (filters.turfType) {
-        results = results.filter(
-          (venue) =>
-            venue.turf_type.toLowerCase() === filters.turfType.toLowerCase()
-        );
-      }
+    // Apply search query
+    if (searchQuery) {
+      const lowercasedQuery = searchQuery.toLowerCase();
+      results = results.filter(
+        (venue) =>
+          venue.name.toLowerCase().includes(lowercasedQuery) ||
+          venue.location.toLowerCase().includes(lowercasedQuery) ||
+          venue.turf_type.toLowerCase().includes(lowercasedQuery)
+      );
     }
+
+    // Apply location filter
+    if (filters.location) {
+      results = results.filter((venue) =>
+        venue.location.toLowerCase().includes(filters.location.toLowerCase())
+      );
+    }
+
+    // Apply price range filter
+    if (filters.priceMin) {
+      results = results.filter(
+        (venue) =>
+          parseFloat(venue.price_per_hour) >= parseFloat(filters.priceMin)
+      );
+    }
+
+    if (filters.priceMax) {
+      results = results.filter(
+        (venue) =>
+          parseFloat(venue.price_per_hour) <= parseFloat(filters.priceMax)
+      );
+    }
+
+    // Apply turf type filter
+    if (filters.turfType) {
+      results = results.filter(
+        (venue) =>
+          venue.turf_type.toLowerCase() === filters.turfType.toLowerCase()
+      );
+    }
+
     setFilteredVenues(results);
   }, [searchQuery, filters, venues]);
 
@@ -159,28 +163,50 @@ export default function HomeScreen({ navigation }) {
   };
 
   // Render empty state
-  if (!loading && filteredVenues && filteredVenues.length === 0 && !error) {
+  if (!loading && filteredVenues.length === 0 && !error) {
     return (
-      <View style={styles.container}>
-        <Searchbar
-          placeholder="Search venues..."
-          onChangeText={setSearchQuery}
-          value={searchQuery}
-          style={styles.searchBar}
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <ModernHeader
+          title="BoxCricketHub"
+          subtitle="Find your perfect cricket ground"
+          actions={[
+            {
+              icon: "bell",
+              onPress: () => navigation.navigate("Notifications"),
+            },
+          ]}
         />
 
-        <View style={styles.filterBar}>
-          <Button mode="outlined" onPress={toggleFilters} icon="filter-variant">
+        <SearchBar
+          onSearch={setSearchQuery}
+          onFilter={toggleFilters}
+          value={searchQuery}
+        />
+
+        <View style={[styles.filterBar, { backgroundColor: theme.background }]}>
+          {/* <ThemedButton
+            mode="outlined"
+            variant="outline"
+            onPress={toggleFilters}
+            icon="filter-variant"
+            size="small"
+          >
             Filters
-          </Button>
+          </ThemedButton> */}
           {(searchQuery ||
             filters.location ||
             filters.priceMin ||
             filters.priceMax ||
             filters.turfType) && (
-            <Button mode="text" onPress={clearFilters} icon="close">
+            <ThemedButton
+              mode="text"
+              variant="outline"
+              onPress={clearFilters}
+              icon="close"
+              size="small"
+            >
               Clear
-            </Button>
+            </ThemedButton>
           )}
         </View>
 
@@ -213,26 +239,48 @@ export default function HomeScreen({ navigation }) {
   }
 
   return (
-    <View style={styles.container}>
-      <Searchbar
-        placeholder="Search venues..."
-        onChangeText={setSearchQuery}
-        value={searchQuery}
-        style={styles.searchBar}
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <ModernHeader
+        title="BoxCricketHub"
+        subtitle={`Welcome back, ${
+          userProfile?.name || user?.email?.split("@")[0] || "Player"
+        }!`}
+        actions={[
+          { icon: "bell", onPress: () => navigation.navigate("Notifications") },
+        ]}
       />
 
-      <View style={styles.filterBar}>
-        <Button mode="outlined" onPress={toggleFilters} icon="filter-variant">
+      <SearchBar
+        onSearch={setSearchQuery}
+        onFilter={toggleFilters}
+        value={searchQuery}
+        placeholder="Search cricket venues..."
+      />
+
+      <View style={[styles.filterBar, { backgroundColor: theme.background }]}>
+        {/* <ThemedButton
+          mode="outlined"
+          variant="outline"
+          onPress={toggleFilters}
+          icon="filter-variant"
+          size="small"
+        >
           Filters
-        </Button>
+        </ThemedButton> */}
         {(searchQuery ||
           filters.location ||
           filters.priceMin ||
           filters.priceMax ||
           filters.turfType) && (
-          <Button mode="text" onPress={clearFilters} icon="close">
-            Clear
-          </Button>
+          <ThemedButton
+            mode="text"
+            variant="outline"
+            onPress={clearFilters}
+            icon="close"
+            size="small"
+          >
+            Clear All
+          </ThemedButton>
         )}
       </View>
 
@@ -240,82 +288,53 @@ export default function HomeScreen({ navigation }) {
         <FilterComponent filters={filters} setFilters={setFilters} />
       )}
 
-      {/* <FlatList
-        data={filteredVenues || []}
+      <FlatList
+        data={filteredVenues}
         renderItem={({ item }) => (
           <VenueCard venue={item} onPress={() => handleVenuePress(item)} />
         )}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[
+          styles.list,
+          { backgroundColor: theme.background },
+        ]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#1E88E5"]}
+            colors={[theme.primary]}
+            tintColor={theme.primary}
           />
         }
         ListHeaderComponent={
-          filteredVenues?.length > 0 ? (
-            <Text style={styles.resultCount}>
-              {filteredVenues?.length}{" "}
-              {filteredVenues?.length === 1 ? "venue" : "venues"} found
-            </Text>
+          filteredVenues.length > 0 ? (
+            <Surface
+              style={[styles.statsCard, { backgroundColor: theme.surface }]}
+            >
+              <Text style={[styles.resultCount, { color: theme.text }]}>
+                {filteredVenues.length}{" "}
+                {filteredVenues.length === 1 ? "venue" : "venues"} found
+              </Text>
+              <Text
+                style={[styles.resultSubtext, { color: theme.textSecondary }]}
+              >
+                Book your perfect cricket ground today
+              </Text>
+            </Surface>
           ) : null
         }
         ListFooterComponent={
           loading && !refreshing ? (
             <ActivityIndicator
               animating={true}
-              color="#1E88E5"
+              color={theme.primary}
               size="large"
               style={styles.loader}
             />
           ) : null
         }
-      /> */}
-      <ScrollView
-        contentContainerStyle={[
-          styles.list,
-          filteredVenues?.length === 0 && styles.emptyList,
-        ]}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={["#1E88E5"]}
-          />
-        }
-      >
-        {filteredVenues?.length > 0 ? (
-          <Text style={styles.resultCount}>
-            {filteredVenues?.length}{" "}
-            {filteredVenues?.length === 1 ? "venue" : "venues"} found
-          </Text>
-        ) : (
-          <Text style={styles.emptyMessage}>No venues found.</Text>
-        )}
-
-        {filteredVenues?.map((item) => (
-          <VenueCard venue={item} onPress={() => handleVenuePress(item)} />
-        ))}
-
-        {loading && !refreshing && filteredVenues?.length > 0 && (
-          <ActivityIndicator
-            animating={true}
-            color="#1E88E5"
-            size="large"
-            style={styles.loader}
-          />
-        )}
-        {loading && !refreshing && filteredVenues?.length === 0 && (
-          <ActivityIndicator
-            animating={true}
-            color="#1E88E5"
-            size="large"
-            style={styles.loader}
-          />
-        )}
-      </ScrollView>
+        showsVerticalScrollIndicator={false}
+      />
     </View>
   );
 }
@@ -323,26 +342,31 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
-  },
-  searchBar: {
-    margin: 16,
-    elevation: 4,
   },
   filterBar: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 16,
-    marginBottom: 8,
+    paddingVertical: 8,
   },
   list: {
+    paddingBottom: 20,
+  },
+  statsCard: {
+    marginHorizontal: 16,
+    marginVertical: 8,
     padding: 16,
-    paddingTop: 0,
+    borderRadius: 12,
+    elevation: 2,
   },
   resultCount: {
-    marginBottom: 12,
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+  resultSubtext: {
     fontSize: 14,
-    color: "#666",
   },
   loader: {
     marginVertical: 20,

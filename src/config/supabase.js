@@ -1,23 +1,16 @@
-// config/supabase.js
 import { createClient } from "@supabase/supabase-js";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import "react-native-url-polyfill/auto";
 
 // Supabase configuration
-const supabaseUrl =
-  process.env.EXPO_PUBLIC_SUPABASE_URL ||
-  "https://vdqjojgsggzlgqezhyzf.supabase.co";
-const supabaseAnonKey =
-  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkcWpvamdzZ2d6bGdxZXpoeXpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYwMDQzNTIsImV4cCI6MjA2MTU4MDM1Mn0.7oXD60fn92F5xmPt8KcvWeOLH2A-cxCWFVDvO-Dfi3g";
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || "";
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || "";
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error(
     "Missing Supabase credentials. Please check your environment variables."
   );
 }
-console.log("Supabase URL:", supabaseUrl);
-console.log("Supabase Anon Key:", supabaseAnonKey);
 
 // Initialize the Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -30,39 +23,38 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 });
 
 // Helper functions for Supabase operations
-export const fetchUserProfile = async () => {
+export const fetchUserProfile = async (userId) => {
+  if (!userId) {
+    console.error("User ID is required to fetch profile.");
+    return null;
+  }
   try {
-    const { data, error } = await supabase.auth.getUser();
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", userId)
+      .single();
 
-    if (error || !data?.user) {
-      console.error("Failed to get authenticated user:", error?.message);
-      return null;
-    }
-
-    const user = data.user;
-
-    // You can structure the returned profile however you need
-    return user?.user_metadata || null;
-  } catch (err) {
-    console.error("Unexpected error in fetchUserProfile:", err.message);
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Error fetching user profile:", error.message);
     return null;
   }
 };
 
-export const uploadImage = async (uri, bucketName, fileName) => {
+export const uploadImage = async (filePath, bucketName, fileName) => {
   try {
-    const response = await fetch(uri);
-    const blob = await response.blob();
-
     const { data, error } = await supabase.storage
       .from(bucketName)
-      .upload(fileName, blob, {
-        contentType: "image/jpeg",
+      .upload(fileName, filePath, {
+        cacheControl: "3600",
         upsert: true,
       });
 
     if (error) throw error;
 
+    // Get public URL for the uploaded image
     const { data: urlData } = supabase.storage
       .from(bucketName)
       .getPublicUrl(fileName);

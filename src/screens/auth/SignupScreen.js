@@ -7,7 +7,6 @@ import {
   Platform,
   ScrollView,
   Image,
-  Alert,
 } from "react-native";
 import {
   TextInput,
@@ -18,7 +17,7 @@ import {
   Divider,
   RadioButton,
 } from "react-native-paper";
-import { useAuth } from "../../context/AuthProvider";
+import { useAuth } from "../../context/AuthContext";
 
 export default function SignupScreen({ navigation }) {
   // State for form inputs and validation
@@ -38,7 +37,6 @@ export default function SignupScreen({ navigation }) {
 
   // Get auth context
   const { signUp } = useAuth();
-  console.log("role", role);
 
   // Validate form inputs
   const validateInputs = () => {
@@ -314,7 +312,6 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     width: "100%",
-    flex: 1,
   },
   input: {
     marginBottom: 5,

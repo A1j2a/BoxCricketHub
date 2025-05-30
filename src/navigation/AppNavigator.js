@@ -4,17 +4,18 @@ import AuthNavigator from "./AuthNavigator";
 import UserNavigator from "./UserNavigator";
 import AdminNavigator from "./AdminNavigator";
 import LoadingScreen from "../components/LoadingScreen";
-import { useAuth } from "../context/AuthProvider";
+import { useAuth } from "../context/AuthContext";
 
 const Stack = createStackNavigator();
 
 export default function AppNavigator() {
-  const { user, loading, userProfile } = useAuth();
+  const { user, loading, userProfile, isAdmin } = useAuth();
 
   // Show loading screen while checking authentication status
   if (loading) {
     return <LoadingScreen />;
   }
+  console.log("userProfile", isAdmin);
 
   return (
     <Stack.Navigator
@@ -24,8 +25,7 @@ export default function AppNavigator() {
     >
       {user ? (
         // If user is authenticated, check role and show appropriate navigator
-
-        userProfile?.role === "admin" ? (
+        isAdmin ? (
           <Stack.Screen name="AdminRoot" component={AdminNavigator} />
         ) : (
           <Stack.Screen name="UserRoot" component={UserNavigator} />

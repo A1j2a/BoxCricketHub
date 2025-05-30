@@ -10,10 +10,13 @@ import userRoutes from './routes/userRoutes.js';
 import groundRoutes from './routes/groundRoutes.js';
 import slotRoutes from './routes/slotRoutes.js';
 import bookingRoutes from './routes/bookingRoutes.js';
+import razorpayRoutes from './routes/razorpayRoutes.js';
 
-// Initialize dotenv
+// Get __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Initialize dotenv
 const dotenvPath = path.resolve(__dirname, '../../.env');
 dotenv.config({ path: dotenvPath });
 
@@ -31,6 +34,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/grounds', groundRoutes);
 app.use('/api/slots', slotRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/payments', razorpayRoutes);
 
 // Root route for API health check
 app.get('/', (req, res) => {

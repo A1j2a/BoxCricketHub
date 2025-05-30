@@ -8,8 +8,9 @@ import {
   Text,
   ActivityIndicator,
 } from "react-native-paper";
+import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../config/supabase";
-import { useAuth } from "../../context/AuthProvider";
+
 
 export default function ProfileScreen({ navigation }) {
   const { user, signOut } = useAuth();

@@ -1,49 +1,73 @@
-const express = require('express');
-const groundsData = require('../../data/groundsData.js');
-const { verifyToken, isAdmin } = require('./userRoutes.js');
+import express from 'express';
+import { verifyToken, isAdmin } from './userRoutes.js';
 
 const router = express.Router();
 
-// Get all grounds (public route)
+// Mock grounds data
+let grounds = [
+  {
+    id: 1,
+    name: 'Mumbai Cricket Arena',
+    location: 'Andheri West, Mumbai',
+    price_per_hour: 1500,
+    turf_type: 'astro',
+    description: 'Premium astro turf ground with floodlights and modern facilities',
+    facilities: ['Parking', 'Washroom', 'Drinking Water', 'Lighting', 'Seating Area'],
+    images: [],
+    videos: [],
+    owner_id: 1,
+    is_featured: true,
+    featured_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 2,
+    name: 'Champions Box Cricket',
+    location: 'Bandra East, Mumbai',
+    price_per_hour: 1200,
+    turf_type: 'mat',
+    description: 'Well-maintained mat turf with professional setup',
+    facilities: ['Parking', 'Washroom', 'Drinking Water', 'Equipment Rental'],
+    images: [],
+    videos: [],
+    owner_id: 1,
+    is_featured: false,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+];
+
+let nextGroundId = 3;
+
+// Get all grounds
 router.get('/', async (req, res) => {
   try {
-    // Check if filters are provided in query params
-    if (Object.keys(req.query).length > 0) {
-      const filters = {
-        turf_type: req.query.turf_type,
-        min_price: req.query.min_price ? parseFloat(req.query.min_price) : undefined,
-        max_price: req.query.max_price ? parseFloat(req.query.max_price) : undefined,
-        search: req.query.search,
-        sort_by: req.query.sort_by
-      };
-      
-      const grounds = await groundsData.filterGrounds(filters);
-      return res.status(200).json({
-        error: false,
-        grounds
-      });
+    const { owner_id } = req.query;
+    let filteredGrounds = grounds;
+
+    if (owner_id) {
+      filteredGrounds = grounds.filter(ground => ground.owner_id === parseInt(owner_id));
     }
-    
-    // If no filters, return all grounds
-    const grounds = await groundsData.getAllGrounds();
-    res.status(200).json({
+
+    res.json({
       error: false,
-      grounds
+      grounds: filteredGrounds
     });
   } catch (error) {
     res.status(500).json({ error: true, message: error.message });
   }
 });
 
-// Get a ground by ID (public route)
+// Get ground by ID
 router.get('/:id', async (req, res) => {
   try {
-    const ground = await groundsData.getGroundById(req.params.id);
+    const ground = grounds.find(g => g.id === parseInt(req.params.id));
     if (!ground) {
       return res.status(404).json({ error: true, message: 'Ground not found' });
     }
-    
-    res.status(200).json({
+
+    res.json({
       error: false,
       ground
     });
@@ -52,58 +76,76 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Get grounds by owner ID (admin only)
-router.get('/owner/:ownerId', verifyToken, isAdmin, async (req, res) => {
-  try {
-    const grounds = await groundsData.getGroundsByOwnerId(req.params.ownerId);
-    res.status(200).json({
-      error: false,
-      grounds
-    });
-  } catch (error) {
-    res.status(500).json({ error: true, message: error.message });
-  }
-});
-
-// Create a new ground (admin only)
-router.post('/', verifyToken, isAdmin, async (req, res) => {
+// Create new ground
+router.post('/', verifyToken, async (req, res) => {
   try {
     const groundData = {
+      id: nextGroundId++,
       ...req.body,
-      owner_id: req.user.id // Set current user as owner
+      owner_id: req.user.id,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
-    
-    const newGround = await groundsData.createGround(groundData);
+
+    grounds.push(groundData);
+
     res.status(201).json({
       error: false,
       message: 'Ground created successfully',
-      ground: newGround
+      ground: groundData
     });
   } catch (error) {
     res.status(500).json({ error: true, message: error.message });
   }
 });
 
-// Update a ground (admin only, and must be the owner)
-router.put('/:id', verifyToken, isAdmin, async (req, res) => {
+// Update ground
+router.put('/:id', verifyToken, async (req, res) => {
   try {
-    // Check if ground exists and user is the owner
-    const existingGround = await groundsData.getGroundById(req.params.id);
-    
-    if (!existingGround) {
+    const groundIndex = grounds.findIndex(g => g.id === parseInt(req.params.id));
+    if (groundIndex === -1) {
       return res.status(404).json({ error: true, message: 'Ground not found' });
     }
-    
-    // Allow admin to update any ground
-    if (req.user.role !== 'admin' && existingGround.owner_id !== req.user.id) {
-      return res.status(403).json({ error: true, message: 'You are not authorized to update this ground' });
+
+    // Check if user owns the ground or is admin
+    if (grounds[groundIndex].owner_id !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: true, message: 'Access denied' });
     }
-    
-    const updatedGround = await groundsData.updateGround(req.params.id, req.body);
-    res.status(200).json({
+
+    grounds[groundIndex] = {
+      ...grounds[groundIndex],
+      ...req.body,
+      updated_at: new Date().toISOString()
+    };
+
+    res.json({
       error: false,
       message: 'Ground updated successfully',
-      ground: updatedGround
+      ground: grounds[groundIndex]
+    });
+  } catch (error) {
+    res.status(500).json({ error: true, message: error.message });
+  }
+});
+
+// Delete ground
+router.delete('/:id', verifyToken, async (req, res) => {
+  try {
+    const groundIndex = grounds.findIndex(g => g.id === parseInt(req.params.id));
+    if (groundIndex === -1) {
+      return res.status(404).json({ error: true, message: 'Ground not found' });
+    }
+
+    // Check if user owns the ground or is admin
+    if (grounds[groundIndex].owner_id !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: true, message: 'Access denied' });
+    }
+
+    grounds.splice(groundIndex, 1);
+
+    res.json({
+      error: false,
+      message: 'Ground deleted successfully'
     });
   } catch (error) {
     res.status(500).json({ error: true, message: error.message });
