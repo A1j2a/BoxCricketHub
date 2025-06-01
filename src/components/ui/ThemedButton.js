@@ -59,7 +59,7 @@ export default function ThemedButton({
     button: {
       borderRadius: 8,
       marginVertical: 8,
-      borderWidth: variant === 'outline' ? 1 : 0,
+      borderWidth: variant === "outline" ? 1 : 0,
       borderColor: colors.borderColor,
     },
     small: {
@@ -67,13 +67,12 @@ export default function ThemedButton({
       paddingHorizontal: 12,
     },
     medium: {
-      paddingVertical: 12,
-      paddingHorizontal: 20,
+      height: 50,
     },
     large: {
       paddingVertical: 16,
       paddingHorizontal: 24,
-    }
+    },
   });
 
   return (

@@ -47,153 +47,164 @@ export default function SlotsManagementScreen({ route, navigation }) {
   const [timeError, setTimeError] = useState('');
   
   // Fetch slots for the selected date
-  const fetchSlots = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const { data, error } = await supabase
-        .from('slots')
-        .select('*, bookings(*)')
-        .eq('ground_id', groundId)
-        .eq('date', selectedDate)
-        .order('start_time');
-        
-      if (error) throw error;
-      
-      setSlots(data || []);
-    } catch (error) {
-      console.error('Error fetching slots:', error.message);
-      setError('Failed to load slots. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  // Initial fetch of slots
-  useEffect(() => {
-    fetchSlots();
-    
-    // Subscribe to realtime changes for slots
-    const subscription = supabase
-      .channel('slots_channel')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'slots',
-        filter: `ground_id=eq.${groundId}`
-      }, (payload) => {
-        // Only refresh if the change affects the current selected date
-        if (payload.new && payload.new.date === selectedDate) {
-          fetchSlots();
-        }
-      })
-      .subscribe();
-      
-    // Cleanup subscription on unmount
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [groundId, selectedDate]);
-  
-  // Generate dates for the next 7 days
-  const getNextSevenDays = () => {
-    const dates = [];
-    for (let i = 0; i < 7; i++) {
-      const date = dayjs().add(i, 'day');
-      dates.push({
-        date: date.format('YYYY-MM-DD'),
-        display: i === 0 ? 'Today' : date.format('ddd, MMM D')
-      });
-    }
-    return dates;
-  };
-  
-  // Change selected date
-  const handleDateChange = (date) => {
-    setSelectedDate(date);
-  };
-  
-  // Handle dialog open/close
-  const showDialog = () => setDialogVisible(true);
-  const hideDialog = () => {
-    setDialogVisible(false);
-    setStartTime('');
-    setEndTime('');
-    setTimeError('');
-  };
-  
-  // Validate time inputs
-  const validateTimeInputs = () => {
-    setTimeError('');
-    
-    if (!startTime || !endTime) {
-      setTimeError('Both start time and end time are required');
-      return false;
-    }
-    
-    const start = dayjs(`2000-01-01 ${startTime}`);
-    const end = dayjs(`2000-01-01 ${endTime}`);
-    
-    if (!start.isValid() || !end.isValid()) {
-      setTimeError('Please enter valid times in HH:MM format');
-      return false;
-    }
-    
-    if (end.isBefore(start) || end.isSame(start)) {
-      setTimeError('End time must be after start time');
-      return false;
-    }
-    
-    // Check for overlapping with existing slots
-    for (const slot of slots) {
-      const existingStart = dayjs(`2000-01-01 ${slot.start_time}`);
-      const existingEnd = dayjs(`2000-01-01 ${slot.end_time}`);
-      
-      if (
-        (start.isAfter(existingStart) && start.isBefore(existingEnd)) ||
-        (end.isAfter(existingStart) && end.isBefore(existingEnd)) ||
-        (start.isSame(existingStart) || end.isSame(existingEnd)) ||
-        (start.isBefore(existingStart) && end.isAfter(existingEnd))
-      ) {
-        setTimeError('This time slot overlaps with an existing slot');
-        return false;
-      }
-    }
-    
-    return true;
-  };
-  
-  // Add new slot
-  const addSlot = async () => {
-    if (!validateTimeInputs()) return;
-    
-    try {
-      setLoading(true);
-      
-      const { data, error } = await supabase
-        .from('slots')
-        .insert([
-          {
-            ground_id: groundId,
-            date: selectedDate,
-            start_time: startTime,
-            end_time: endTime,
-            is_booked: false
-          }
-        ]);
-        
-      if (error) throw error;
-      
-      await fetchSlots();
-      hideDialog();
-    } catch (error) {
-      console.error('Error adding slot:', error.message);
-      Alert.alert('Error', 'Failed to add slot. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+ const fetchSlots = async () => {
+   try {
+     setLoading(true);
+     setError(null);
+
+     const { data, error } = await supabase
+       .from("slots")
+       .select("*")
+       .eq("ground_id", groundId)
+       .eq("date", selectedDate)
+       .order("start_time", { ascending: true });
+
+     if (error) throw error;
+
+     setSlots(data || []);
+   } catch (error) {
+     console.error("Error fetching slots:", error.message);
+     setError("Failed to load slots. Please try again.");
+   } finally {
+     setLoading(false);
+   }
+ };
+
+ // Initial fetch of slots
+ useEffect(() => {
+   fetchSlots();
+
+   // Subscribe to realtime changes for slots
+   const subscription = supabase
+     .channel("slots_channel")
+     .on(
+       "postgres_changes",
+       {
+         event: "*",
+         schema: "public",
+         table: "slots",
+         filter: `ground_id=eq.${groundId}`,
+       },
+       (payload) => {
+         // Only refresh if the change affects the current selected date
+         if (payload.new && payload.new.date === selectedDate) {
+           fetchSlots();
+         }
+       }
+     )
+     .subscribe();
+
+   // Cleanup subscription on unmount
+   return () => {
+     subscription.unsubscribe();
+   };
+ }, [groundId, selectedDate]);
+
+ // Generate dates for the next 7 days
+ const getNextSevenDays = () => {
+   const dates = [];
+   for (let i = 0; i < 7; i++) {
+     const date = dayjs().add(i, "day");
+     dates.push({
+       date: date.format("YYYY-MM-DD"),
+       display: i === 0 ? "Today" : date.format("ddd, MMM D"),
+     });
+   }
+   return dates;
+ };
+
+ // Change selected date
+ const handleDateChange = (date) => {
+   setSelectedDate(date);
+ };
+
+ // Handle dialog open/close
+ const showDialog = () => setDialogVisible(true);
+ const hideDialog = () => {
+   setDialogVisible(false);
+   setStartTime("");
+   setEndTime("");
+   setTimeError("");
+ };
+
+ // Validate time inputs
+ const validateTimeInputs = () => {
+   setTimeError("");
+
+   if (!startTime || !endTime) {
+     setTimeError("Both start time and end time are required");
+     return false;
+   }
+
+   const start = dayjs(`2000-01-01 ${startTime}`);
+   const end = dayjs(`2000-01-01 ${endTime}`);
+
+   if (!start.isValid() || !end.isValid()) {
+     setTimeError("Please enter valid times in HH:MM format");
+     return false;
+   }
+
+   if (end.isBefore(start) || end.isSame(start)) {
+     setTimeError("End time must be after start time");
+     return false;
+   }
+
+   // Check for overlapping with existing slots
+   for (const slot of slots) {
+     const existingStart = dayjs(`2000-01-01 ${slot.start_time}`);
+     const existingEnd = dayjs(`2000-01-01 ${slot.end_time}`);
+
+     if (
+       (start.isAfter(existingStart) && start.isBefore(existingEnd)) ||
+       (end.isAfter(existingStart) && end.isBefore(existingEnd)) ||
+       start.isSame(existingStart) ||
+       end.isSame(existingEnd) ||
+       (start.isBefore(existingStart) && end.isAfter(existingEnd))
+     ) {
+       setTimeError("This time slot overlaps with an existing slot");
+       return false;
+     }
+   }
+
+   return true;
+ };
+
+ // Add new slot
+ const addSlot = async () => {
+   if (!validateTimeInputs()) return;
+
+   try {
+     setLoading(true);
+
+     // Compose full ISO timestamp strings for start_time and end_time
+     const fullStartTime = `${selectedDate}T${startTime.padStart(
+       2,
+       "0"
+     )}:00:00Z`;
+     const fullEndTime = `${selectedDate}T${endTime.padStart(2, "0")}:00:00Z`;
+
+     const { data, error } = await supabase.from("slots").insert([
+       {
+         ground_id: groundId,
+         date: selectedDate,
+         start_time: fullStartTime,
+         end_time: fullEndTime,
+         is_booked: false,
+       },
+     ]);
+
+     if (error) throw error;
+
+     await fetchSlots();
+     hideDialog();
+   } catch (error) {
+     console.error("Error adding slot:", error.message);
+     Alert.alert("Error", "Failed to add slot. Please try again.");
+   } finally {
+     setLoading(false);
+   }
+ };
+
   
   // Delete a slot
   const deleteSlot = async (slotId, hasBookings) => {

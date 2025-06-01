@@ -1,62 +1,89 @@
-import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createStackNavigator } from '@react-navigation/stack';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import GroundsListScreen from '../screens/admin/GroundsListScreen';
-import AddEditGroundScreen from '../screens/admin/AddEditGroundScreen';
-import SlotsManagementScreen from '../screens/admin/SlotsManagementScreen';
-import BookingsManagementScreen from '../screens/admin/BookingsManagementScreen';
+import React from "react";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createStackNavigator } from "@react-navigation/stack";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import GroundsListScreen from "../screens/admin/GroundsListScreen";
+import AddEditGroundScreen from "../screens/admin/AddEditGroundScreen";
+import SlotsManagementScreen from "../screens/admin/SlotsManagementScreen";
+import BookingsManagementScreen from "../screens/admin/BookingsManagementScreen";
+import ProfileScreen from "../screens/profile/ProfileScreen";
+import PrivacyPolicyScreen from "../screens/profile/PrivacyPolicyScreen"; // ✅ Import
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
-// Stack navigator for the grounds management
+// ✅ Stack navigator for the grounds management
 function GroundsStack() {
   return (
     <Stack.Navigator
       screenOptions={{
         headerStyle: {
-          backgroundColor: '#1E88E5',
+          backgroundColor: "#1E88E5",
         },
-        headerTintColor: '#fff',
+        headerTintColor: "#fff",
         headerTitleStyle: {
-          fontWeight: 'bold',
+          fontWeight: "bold",
         },
       }}
     >
-      <Stack.Screen 
-        name="GroundsList" 
-        component={GroundsListScreen} 
-        options={{ title: 'My Grounds' }} 
+      <Stack.Screen
+        name="GroundsList"
+        component={GroundsListScreen}
+        options={{ title: "My Grounds" }}
       />
-      <Stack.Screen 
-        name="AddEditGround" 
+      <Stack.Screen
+        name="AddEditGround"
         component={AddEditGroundScreen}
-        options={({ route }) => ({ 
-          title: route.params?.groundId ? 'Edit Ground' : 'Add New Ground' 
+        options={({ route }) => ({
+          title: route.params?.groundId ? "Edit Ground" : "Add New Ground",
+          headerShown: false,
         })}
       />
-      <Stack.Screen 
-        name="SlotsManagement" 
+      <Stack.Screen
+        name="SlotsManagement"
         component={SlotsManagementScreen}
-        options={({ route }) => ({ 
-          title: `Manage Slots: ${route.params?.groundName || ''}` 
+        options={({ route }) => ({
+          title: `Manage Slots: ${route.params?.groundName || ""}`,
         })}
       />
     </Stack.Navigator>
   );
 }
 
-// Main tab navigator for admin
+// ✅ Stack navigator for the Profile tab (for Admin)
+function ProfileStack() {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: "#1E88E5" },
+        headerTintColor: "#fff",
+        headerTitleStyle: { fontWeight: "bold" },
+      }}
+    >
+      <Stack.Screen
+        name="ProfileMain"
+        component={ProfileScreen}
+        options={{ title: "Profile" }}
+      />
+      <Stack.Screen
+        name="PrivacyPolicy"
+        component={PrivacyPolicyScreen}
+        options={{ title: "Privacy Policy" }}
+      />
+    </Stack.Navigator>
+  );
+}
+
+// ✅ Main tab navigator for admin
 export default function AdminNavigator() {
   return (
     <Tab.Navigator
       screenOptions={{
-        tabBarActiveTintColor: '#1E88E5',
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: "#1E88E5",
+        tabBarInactiveTintColor: "gray",
         tabBarLabelStyle: {
           fontSize: 12,
-          fontWeight: '500',
+          fontWeight: "500",
         },
         tabBarStyle: {
           paddingBottom: 5,
@@ -69,7 +96,7 @@ export default function AdminNavigator() {
         name="GroundsTab"
         component={GroundsStack}
         options={{
-          tabBarLabel: 'My Grounds',
+          tabBarLabel: "My Grounds",
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="cricket" color={color} size={size} />
           ),
@@ -79,19 +106,33 @@ export default function AdminNavigator() {
         name="Bookings"
         component={BookingsManagementScreen}
         options={{
-          tabBarLabel: 'Bookings',
+          tabBarLabel: "Bookings",
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="calendar-check" color={color} size={size} />
+            <MaterialCommunityIcons
+              name="calendar-check"
+              color={color}
+              size={size}
+            />
           ),
           headerShown: true,
           headerStyle: {
-            backgroundColor: '#1E88E5',
+            backgroundColor: "#1E88E5",
           },
-          headerTintColor: '#fff',
+          headerTintColor: "#fff",
           headerTitleStyle: {
-            fontWeight: 'bold',
+            fontWeight: "bold",
           },
-          title: 'Booking Requests'
+          title: "Booking Requests",
+        }}
+      />
+      <Tab.Screen
+        name="ProfileTab"
+        component={ProfileStack} // ✅ Stack instead of single screen
+        options={{
+          tabBarLabel: "Profile",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="account" color={color} size={size} />
+          ),
         }}
       />
     </Tab.Navigator>

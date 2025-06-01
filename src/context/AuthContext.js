@@ -38,7 +38,8 @@ export const AuthProvider = ({ children }) => {
           setUser(session.user);
 
           // Fetch user profile data including role
-          const profile = await fetchUserProfile(session.user.id);
+          const profile = await fetchUserProfile(session.user);
+          
           setUserProfile(profile);
         }
       } catch (error) {

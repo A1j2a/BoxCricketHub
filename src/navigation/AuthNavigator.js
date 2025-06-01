@@ -10,25 +10,25 @@ export default function AuthNavigator() {
     <Stack.Navigator
       initialRouteName="Login"
       screenOptions={{
-        headerTitleAlign: 'center',
+        headerTitleAlign: "center",
         headerStyle: {
-          backgroundColor: '#1E88E5',
+          backgroundColor: "#1E88E5",
         },
-        headerTintColor: '#fff',
+        headerTintColor: "#fff",
         headerTitleStyle: {
-          fontWeight: 'bold',
+          fontWeight: "bold",
         },
       }}
     >
-      <Stack.Screen 
-        name="Login" 
-        component={LoginScreen} 
-        options={{ title: 'Box Cricket Hub - Login' }} 
+      <Stack.Screen
+        name="Login"
+        component={LoginScreen}
+        options={{ title: "Box Cricket Hub - Login", headerShown: false }}
       />
-      <Stack.Screen 
-        name="Signup" 
-        component={SignupScreen} 
-        options={{ title: 'Box Cricket Hub - Signup' }} 
+      <Stack.Screen
+        name="Signup"
+        component={SignupScreen}
+        options={{ title: "Box Cricket Hub - Signup", headerShown: false }}
       />
     </Stack.Navigator>
   );

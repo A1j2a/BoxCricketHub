@@ -15,7 +15,6 @@ export default function AppNavigator() {
   if (loading) {
     return <LoadingScreen />;
   }
-  console.log("userProfile", isAdmin);
 
   return (
     <Stack.Navigator

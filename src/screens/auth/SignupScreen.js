@@ -7,6 +7,7 @@ import {
   Platform,
   ScrollView,
   Image,
+  Alert,
 } from "react-native";
 import {
   TextInput,
@@ -112,7 +113,7 @@ export default function SignupScreen({ navigation }) {
         "Signup Successful",
         message || "Account created successfully."
       );
-      navigation.navigate("Login");
+      // navigation.navigate("Login");
     } catch (error) {
       console.error("Signup error:", error);
       setSignupError("An unexpected error occurred. Please try again.");
@@ -289,7 +290,8 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     padding: 20,
-    paddingTop: 10,
+    paddingTop: 100,
+    paddingBottom: 20,
   },
   logoContainer: {
     alignItems: "center",

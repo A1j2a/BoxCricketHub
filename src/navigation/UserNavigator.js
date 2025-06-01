@@ -8,6 +8,7 @@ import BookingScreen from "../screens/user/BookingScreen";
 import MyBookingsScreen from "../screens/user/MyBookingsScreen";
 import ProfileScreen from "../screens/profile/ProfileScreen";
 import PrivacyPolicyScreen from "../screens/profile/PrivacyPolicyScreen"; // ✅ import
+import MediaViewerScreen from "../components/MediaViewerScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -39,6 +40,11 @@ function HomeStack() {
         name="Booking"
         component={BookingScreen}
         options={{ title: "Book Venue" }}
+      />
+      <Stack.Screen
+        name="MediaViewerScreen"
+        component={MediaViewerScreen}
+        options={{ title: "Book Venue", headerShown: false }}
       />
     </Stack.Navigator>
   );

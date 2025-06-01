@@ -46,81 +46,81 @@ export default function AddEditGroundScreen({ route, navigation }) {
   const isEditing = !!groundId;
   const { user } = useAuth();
   const { theme } = useTheme();
-  
+
   // State variables
-  const [name, setName] = useState('');
-  const [location, setLocation] = useState('');
-  const [price, setPrice] = useState('');
-  const [turfType, setTurfType] = useState('');
-  const [description, setDescription] = useState('');
+  const [name, setName] = useState("");
+  const [location, setLocation] = useState("");
+  const [price, setPrice] = useState("");
+  const [turfType, setTurfType] = useState("");
+  const [description, setDescription] = useState("");
   const [facilities, setFacilities] = useState([]);
-  
+
   // Media state
   const [images, setImages] = useState([]);
   const [videos, setVideos] = useState([]);
   const [mediaChanged, setMediaChanged] = useState(false);
   const [uploadingMedia, setUploadingMedia] = useState(false);
-  
+
   // UI state for media picker
   const [showMediaMenu, setShowMediaMenu] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState(null);
-  
+
   // Validation state
-  const [nameError, setNameError] = useState('');
-  const [locationError, setLocationError] = useState('');
-  const [priceError, setPriceError] = useState('');
-  const [turfTypeError, setTurfTypeError] = useState('');
-  
+  const [nameError, setNameError] = useState("");
+  const [locationError, setLocationError] = useState("");
+  const [priceError, setPriceError] = useState("");
+  const [turfTypeError, setTurfTypeError] = useState("");
+
   // UI state
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(isEditing);
   const [error, setError] = useState(null);
-  
+
   // Fetch ground details if editing
   const fetchGroundDetails = async () => {
     if (!isEditing) {
       setInitialLoading(false);
       return;
     }
-    
+
     try {
       setInitialLoading(true);
       setError(null);
-      
+
       const { data, error } = await supabase
-        .from('grounds')
-        .select('*')
-        .eq('id', groundId)
+        .from("grounds")
+        .select("*")
+        .eq("id", groundId)
         .single();
-        
+
       if (error) throw error;
-      
+
       if (data) {
-        setName(data.name || '');
-        setLocation(data.location || '');
-        setPrice(data.price_per_hour ? data.price_per_hour.toString() : '');
-        setTurfType(data.turf_type || '');
-        setDescription(data.description || '');
-        setImageUri(data.image_url || null);
+        setName(data.name || "");
+        setLocation(data.location || "");
+        setPrice(data.price_per_hour ? data.price_per_hour.toString() : "");
+        setTurfType(data.turf_type || "");
+        setDescription(data.description || "");
+        setImages(data.image_url || null);
       }
     } catch (error) {
-      console.error('Error fetching ground details:', error.message);
-      setError('Failed to load ground details. Please try again.');
+      console.error("Error fetching ground details:", error.message);
+      setError("Failed to load ground details. Please try again.");
     } finally {
       setInitialLoading(false);
     }
   };
-  
+
   // Initialize form with existing data if editing
   useEffect(() => {
     if (ground) {
-      setName(ground.name || '');
-      setLocation(ground.location || '');
-      setPrice(ground.price_per_hour ? ground.price_per_hour.toString() : '');
-      setTurfType(ground.turf_type || '');
-      setDescription(ground.description || '');
-      setImageUri(ground.image_url || null);
+      setName(ground.name || "");
+      setLocation(ground.location || "");
+      setPrice(ground.price_per_hour ? ground.price_per_hour.toString() : "");
+      setTurfType(ground.turf_type || "");
+      setDescription(ground.description || "");
+      setImages(ground.image_url || null);
       setInitialLoading(false);
     } else if (isEditing) {
       fetchGroundDetails();
@@ -128,150 +128,255 @@ export default function AddEditGroundScreen({ route, navigation }) {
       setInitialLoading(false);
     }
   }, [ground, isEditing]);
-  
+
   // Validate form inputs
   const validateInputs = () => {
     let isValid = true;
-    
+
     // Reset errors
-    setNameError('');
-    setLocationError('');
-    setPriceError('');
-    setTurfTypeError('');
-    
+    setNameError("");
+    setLocationError("");
+    setPriceError("");
+    setTurfTypeError("");
+
     // Validate name
     if (!name.trim()) {
-      setNameError('Ground name is required');
+      setNameError("Ground name is required");
       isValid = false;
     }
-    
+
     // Validate location
     if (!location.trim()) {
-      setLocationError('Location is required');
+      setLocationError("Location is required");
       isValid = false;
     }
-    
+
     // Validate price
     if (!price) {
-      setPriceError('Price per hour is required');
+      setPriceError("Price per hour is required");
       isValid = false;
     } else if (isNaN(parseFloat(price)) || parseFloat(price) <= 0) {
-      setPriceError('Price must be a positive number');
+      setPriceError("Price must be a positive number");
       isValid = false;
     }
-    
+
     // Validate turf type
     if (!turfType) {
-      setTurfTypeError('Turf type is required');
+      setTurfTypeError("Turf type is required");
       isValid = false;
     }
-    
+
     return isValid;
   };
-  
+
   // Available facilities
   const availableFacilities = [
-    'Parking', 'Washroom', 'Drinking Water', 'First Aid', 'Lighting',
-    'Seating Area', 'Changing Room', 'Equipment Rental', 'Refreshments', 'Security'
+    "Parking",
+    "Washroom",
+    "Drinking Water",
+    "First Aid",
+    "Lighting",
+    "Seating Area",
+    "Changing Room",
+    "Equipment Rental",
+    "Refreshments",
+    "Security",
   ];
 
   // Media handling functions
+  const [isPicking, setIsPicking] = useState(false);
+
   const handleAddImages = async () => {
+    setShowMediaMenu(false);
+    if (isPicking) return;
+    setIsPicking(true);
+
     try {
       const selectedImages = await MediaService.pickImages(true);
+
+      // Defensive check: if null or not an array, set to empty array
+      if (!Array.isArray(selectedImages)) {
+        Alert.alert("Error", "No images were selected.");
+        setIsPicking(false);
+        return;
+      }
+
       if (selectedImages.length > 0) {
-        const newImages = [...images, ...selectedImages];
-        if (newImages.length > MediaService.maxImages) {
-          Alert.alert(
-            'Too Many Images',
-            `You can only upload up to ${MediaService.maxImages} images. Please select fewer images.`
-          );
+        // Prevent duplicates by URI
+        const newImages = [...images];
+        selectedImages.forEach((img) => {
+          if (
+            img &&
+            img.uri &&
+            !newImages.some((existing) => existing.uri === img.uri)
+          ) {
+            newImages.push(img);
+          }
+        });
+
+        const errors = MediaService.validateMediaFiles(newImages, videos);
+        if (errors.length > 0) {
+          Alert.alert("Validation Error", errors.join("\n"));
+          setIsPicking(false);
           return;
         }
+
         setImages(newImages);
         setMediaChanged(true);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to select images. Please try again.');
+      console.error("Image selection error:", error);
+      Alert.alert("Error", "Failed to select images. Please try again.");
     }
-    setShowMediaMenu(false);
+
+    setIsPicking(false);
   };
 
   const handleAddVideos = async () => {
+    setShowMediaMenu(false);
+    if (isPicking) return;
+    setIsPicking(true);
+
     try {
       const selectedVideos = await MediaService.pickVideos(true);
       if (selectedVideos.length > 0) {
-        const newVideos = [...videos, ...selectedVideos];
-        if (newVideos.length > MediaService.maxVideos) {
-          Alert.alert(
-            'Too Many Videos',
-            `You can only upload up to ${MediaService.maxVideos} videos. Please select fewer videos.`
-          );
+        // Prevent duplicates by URI
+        const newVideos = [...videos];
+        selectedVideos.forEach((video) => {
+          if (!newVideos.some((existing) => existing.uri === video.uri)) {
+            newVideos.push(video);
+          }
+        });
+
+        const errors = MediaService.validateMediaFiles(images, newVideos);
+        if (errors.length > 0) {
+          Alert.alert("Validation Error", errors.join("\n"));
+          setIsPicking(false);
           return;
         }
+
         setVideos(newVideos);
         setMediaChanged(true);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to select videos. Please try again.');
+      console.error("Video selection error:", error);
+      Alert.alert("Error", "Failed to select videos. Please try again.");
     }
-    setShowMediaMenu(false);
+
+    setIsPicking(false);
   };
 
   const handleCapturePhoto = async () => {
+    setShowMediaMenu(false);
+    if (isPicking) return;
+    setIsPicking(true);
+
     try {
       const photo = await MediaService.capturePhoto();
       if (photo) {
-        const newImages = [...images, photo];
-        if (newImages.length > MediaService.maxImages) {
-          Alert.alert(
-            'Too Many Images',
-            `You can only upload up to ${MediaService.maxImages} images.`
-          );
+        const newImages = [...images];
+        if (!newImages.some((img) => img.uri === photo.uri)) {
+          newImages.push(photo);
+        }
+
+        const errors = MediaService.validateMediaFiles(newImages, videos);
+        if (errors.length > 0) {
+          Alert.alert("Validation Error", errors.join("\n"));
+          setIsPicking(false);
           return;
         }
+
         setImages(newImages);
         setMediaChanged(true);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to capture photo. Please try again.');
+      console.error("Capture photo error:", error);
+      Alert.alert("Error", "Failed to capture photo. Please try again.");
     }
-    setShowMediaMenu(false);
+
+    setIsPicking(false);
   };
 
   const handleCaptureVideo = async () => {
+    setShowMediaMenu(false);
+    if (isPicking) return;
+    setIsPicking(true);
+
     try {
       const video = await MediaService.captureVideo();
       if (video) {
-        const newVideos = [...videos, video];
-        if (newVideos.length > MediaService.maxVideos) {
-          Alert.alert(
-            'Too Many Videos',
-            `You can only upload up to ${MediaService.maxVideos} videos.`
-          );
+        const newVideos = [...videos];
+        if (!newVideos.some((v) => v.uri === video.uri)) {
+          newVideos.push(video);
+        }
+
+        const errors = MediaService.validateMediaFiles(images, newVideos);
+        if (errors.length > 0) {
+          Alert.alert("Validation Error", errors.join("\n"));
+          setIsPicking(false);
           return;
         }
+
         setVideos(newVideos);
         setMediaChanged(true);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to record video. Please try again.');
+      console.error("Capture video error:", error);
+      Alert.alert("Error", "Failed to record video. Please try again.");
     }
-    setShowMediaMenu(false);
+
+    setIsPicking(false);
   };
 
   const removeImage = (index) => {
+    // Optional: confirm removal
+    // Alert.alert(
+    //   "Remove Image",
+    //   "Are you sure you want to remove this image?",
+    //   [
+    //     { text: "Cancel", style: "cancel" },
+    //     {
+    //       text: "Remove",
+    //       style: "destructive",
+    //       onPress: () => {
+    //         const newImages = images.filter((_, i) => i !== index);
+    //         setImages(newImages);
+    //         setMediaChanged(true);
+    //       },
+    //     },
+    //   ]
+    // );
+
+    // Or just remove directly:
     const newImages = images.filter((_, i) => i !== index);
     setImages(newImages);
     setMediaChanged(true);
   };
 
   const removeVideo = (index) => {
+    // Optional: confirm removal
+    // Alert.alert(
+    //   "Remove Video",
+    //   "Are you sure you want to remove this video?",
+    //   [
+    //     { text: "Cancel", style: "cancel" },
+    //     {
+    //       text: "Remove",
+    //       style: "destructive",
+    //       onPress: () => {
+    //         const newVideos = videos.filter((_, i) => i !== index);
+    //         setVideos(newVideos);
+    //         setMediaChanged(true);
+    //       },
+    //     },
+    //   ]
+    // );
+
+    // Or just remove directly:
     const newVideos = videos.filter((_, i) => i !== index);
     setVideos(newVideos);
     setMediaChanged(true);
   };
-
   const addFacility = (facility) => {
     if (!facilities.includes(facility)) {
       setFacilities([...facilities, facility]);
@@ -279,9 +384,9 @@ export default function AddEditGroundScreen({ route, navigation }) {
   };
 
   const removeFacility = (facility) => {
-    setFacilities(facilities.filter(f => f !== facility));
+    setFacilities(facilities.filter((f) => f !== facility));
   };
-  
+
   // Upload media files to Supabase storage
   const uploadMediaFiles = async () => {
     if (!mediaChanged || (images.length === 0 && videos.length === 0)) {
@@ -290,80 +395,83 @@ export default function AddEditGroundScreen({ route, navigation }) {
 
     try {
       setUploadingMedia(true);
-      
+
       // Combine all media files
       const allFiles = [...images, ...videos];
-      
+
       // Validate before upload
       const validationErrors = MediaService.validateMediaFiles(images, videos);
       if (validationErrors.length > 0) {
-        Alert.alert('Validation Error', validationErrors.join('\n'));
+        Alert.alert("Validation Error", validationErrors.join("\n"));
         return { images: [], videos: [] };
       }
 
       // Upload to Supabase
       const uploadedFiles = await MediaService.uploadToSupabase(
-        allFiles, 
-        'ground-media', 
+        allFiles,
+        "ground-media",
         user.id
       );
 
       // Separate uploaded images and videos
-      const uploadedImages = uploadedFiles.filter(file => 
-        file.type === 'image' && file.uploaded
-      ).map(file => ({
-        url: file.publicUrl,
-        type: 'image',
-        name: file.name,
-        size: file.size,
-        width: file.width,
-        height: file.height,
-        supabaseKey: file.supabaseKey,
-      }));
+      const uploadedImages = uploadedFiles
+        .filter((file) => file.type === "image" && file.uploaded)
+        .map((file) => ({
+          url: file.publicUrl,
+          type: "image",
+          name: file.name,
+          size: file.size,
+          width: file.width,
+          height: file.height,
+          supabaseKey: file.supabaseKey,
+        }));
 
-      const uploadedVideos = uploadedFiles.filter(file => 
-        file.type === 'video' && file.uploaded
-      ).map(file => ({
-        url: file.publicUrl,
-        type: 'video',
-        name: file.name,
-        size: file.size,
-        duration: file.duration,
-        width: file.width,
-        height: file.height,
-        supabaseKey: file.supabaseKey,
-      }));
+      const uploadedVideos = uploadedFiles
+        .filter((file) => file.type === "video" && file.uploaded)
+        .map((file) => ({
+          url: file.publicUrl,
+          type: "video",
+          name: file.name,
+          size: file.size,
+          duration: file.duration,
+          width: file.width,
+          height: file.height,
+          supabaseKey: file.supabaseKey,
+        }));
 
       // Check for failed uploads
-      const failedUploads = uploadedFiles.filter(file => !file.uploaded);
+      const failedUploads = uploadedFiles.filter((file) => !file.uploaded);
       if (failedUploads.length > 0) {
-        const failedNames = failedUploads.map(file => file.name).join(', ');
+        const failedNames = failedUploads.map((file) => file.name).join(", ");
         Alert.alert(
-          'Upload Warning', 
+          "Upload Warning",
           `Some files failed to upload: ${failedNames}. The ground will be saved with the successfully uploaded media.`
         );
       }
 
       return { images: uploadedImages, videos: uploadedVideos };
     } catch (error) {
-      console.error('Error uploading media files:', error);
-      Alert.alert('Upload Error', 'Failed to upload media files. Please try again.');
+      console.error("Error uploading media files:", error);
+      Alert.alert(
+        "Upload Error",
+        "Failed to upload media files. Please try again."
+      );
       throw error;
     } finally {
       setUploadingMedia(false);
     }
   };
-  
+
   // Save ground data
   const saveGround = async () => {
     if (!validateInputs()) return;
-    
+
     try {
       setLoading(true);
-      
+
       // Upload media files if any changes
       const uploadedMedia = await uploadMediaFiles();
-      
+
       const groundData = {
         name: name.trim(),
         location: location.trim(),
@@ -376,50 +484,53 @@ export default function AddEditGroundScreen({ route, navigation }) {
         owner_id: user.id,
         updated_at: new Date().toISOString(),
       };
-      
+
       if (isEditing) {
         // Update existing ground
         const { error } = await supabase
-          .from('grounds')
+          .from("grounds")
           .update(groundData)
-          .eq('id', groundId);
-          
+          .eq("id", groundId);
+
         if (error) throw error;
-        
-        Alert.alert(
-          'Success',
-          'Ground updated successfully',
-          [{ text: 'OK', onPress: () => navigation.goBack() }]
-        );
+
+        Alert.alert("Success", "Ground updated successfully", [
+          { text: "OK", onPress: () => navigation.goBack() },
+        ]);
       } else {
         // Create new ground
         const { data, error } = await supabase
-          .from('grounds')
-          .insert([{
-            ...groundData,
-            created_at: new Date().toISOString(),
-          }])
+          .from("grounds")
+          .insert([
+            {
+              ...groundData,
+              created_at: new Date().toISOString(),
+            },
+          ])
           .select()
           .single();
-          
+
         if (error) throw error;
-        
+
         // Show success with option to create premium listing
         Alert.alert(
-          'Success',
-          'Ground added successfully! Would you like to make it a featured listing for better visibility?',
+          "Success",
+          "Ground added successfully! Would you like to make it a featured listing for better visibility?",
           [
-            { text: 'Not Now', onPress: () => navigation.goBack() },
-            { 
-              text: 'Make Featured', 
-              onPress: () => handlePremiumUpgrade(data.id)
-            }
+            { text: "Not Now", onPress: () => navigation.goBack() },
+            {
+              text: "Make Featured",
+              onPress: () => handlePremiumUpgrade(data.id),
+            },
           ]
         );
       }
     } catch (error) {
-      console.error('Error saving ground:', error.message);
-      Alert.alert('Error', `Failed to ${isEditing ? 'update' : 'add'} ground. Please try again.`);
+      console.error("Error saving ground:", error.message);
+      Alert.alert(
+        "Error",
+        `Failed to ${isEditing ? "update" : "add"} ground. Please try again.`
+      );
     } finally {
       setLoading(false);
     }
@@ -429,45 +540,47 @@ export default function AddEditGroundScreen({ route, navigation }) {
   const handlePremiumUpgrade = async (groundId) => {
     try {
       const premiumPrice = 999; // ₹999 for featured listing
-      
+
       const paymentResult = await RazorpayService.initiateBookingPayment({
         amount: premiumPrice,
         venueName: name,
-        userName: user.email?.split('@')[0] || 'Ground Owner',
+        userName: user.email?.split("@")[0] || "Ground Owner",
         userEmail: user.email,
-        userPhone: user.phone || '',
+        userPhone: user.phone || "",
         slotId: groundId,
       });
 
       if (paymentResult.success) {
         // Update ground to premium status
         const { error } = await supabase
-          .from('grounds')
+          .from("grounds")
           .update({
             is_featured: true,
-            featured_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
+            featured_until: new Date(
+              Date.now() + 30 * 24 * 60 * 60 * 1000
+            ).toISOString(), // 30 days
             payment_id: paymentResult.paymentId,
           })
-          .eq('id', groundId);
+          .eq("id", groundId);
 
         if (error) throw error;
 
         Alert.alert(
-          'Featured Listing Activated',
-          'Your ground is now featured and will get better visibility for the next 30 days!',
-          [{ text: 'OK', onPress: () => navigation.goBack() }]
+          "Featured Listing Activated",
+          "Your ground is now featured and will get better visibility for the next 30 days!",
+          [{ text: "OK", onPress: () => navigation.goBack() }]
         );
       }
     } catch (error) {
-      console.error('Premium upgrade failed:', error);
+      console.error("Premium upgrade failed:", error);
       Alert.alert(
-        'Payment Failed', 
-        'Featured listing upgrade failed. Your ground has been saved successfully.',
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
+        "Payment Failed",
+        "Featured listing upgrade failed. Your ground has been saved successfully.",
+        [{ text: "OK", onPress: () => navigation.goBack() }]
       );
     }
   };
-  
+
   // Render loading state
   if (initialLoading) {
     return (
@@ -477,12 +590,12 @@ export default function AddEditGroundScreen({ route, navigation }) {
       </View>
     );
   }
-  
+
   // Render error state
   if (error) {
     return <ErrorComponent message={error} onRetry={fetchGroundDetails} />;
   }
-  
+
   // Render image items
   const renderImageItem = ({ item, index }) => (
     <ThemedCard style={styles.mediaCard}>
@@ -495,7 +608,10 @@ export default function AddEditGroundScreen({ route, navigation }) {
         onPress={() => removeImage(index)}
       />
       <View style={styles.mediaInfo}>
-        <Text style={[styles.mediaName, { color: theme.textSecondary }]} numberOfLines={1}>
+        <Text
+          style={[styles.mediaName, { color: theme.textSecondary }]}
+          numberOfLines={1}
+        >
           {item.name}
         </Text>
         <Text style={[styles.mediaSize, { color: theme.textSecondary }]}>
@@ -511,7 +627,11 @@ export default function AddEditGroundScreen({ route, navigation }) {
       <View style={styles.videoContainer}>
         <Image source={{ uri: item.uri }} style={styles.mediaImage} />
         <View style={styles.videoOverlay}>
-          <MaterialCommunityIcons name="play-circle" size={40} color="rgba(255,255,255,0.9)" />
+          <MaterialCommunityIcons
+            name="play-circle"
+            size={40}
+            color="rgba(255,255,255,0.9)"
+          />
         </View>
       </View>
       <IconButton
@@ -522,11 +642,15 @@ export default function AddEditGroundScreen({ route, navigation }) {
         onPress={() => removeVideo(index)}
       />
       <View style={styles.mediaInfo}>
-        <Text style={[styles.mediaName, { color: theme.textSecondary }]} numberOfLines={1}>
+        <Text
+          style={[styles.mediaName, { color: theme.textSecondary }]}
+          numberOfLines={1}
+        >
           {item.name}
         </Text>
         <Text style={[styles.mediaSize, { color: theme.textSecondary }]}>
-          {MediaService.formatFileSize(item.size)} • {MediaService.formatDuration(item.duration)}
+          {MediaService.formatFileSize(item.size)} •{" "}
+          {MediaService.formatDuration(item.duration)}
         </Text>
       </View>
     </ThemedCard>
@@ -534,18 +658,18 @@ export default function AddEditGroundScreen({ route, navigation }) {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <ModernHeader 
-        title={isEditing ? 'Edit Ground' : 'Add New Ground'}
+      <ModernHeader
+        title={isEditing ? "Edit Ground" : "Add New Ground"}
         showBack={true}
         onBack={() => navigation.goBack()}
         showThemeToggle={false}
       />
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardContainer}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContainer}
           keyboardShouldPersistTaps="handled"
         >
@@ -554,15 +678,18 @@ export default function AddEditGroundScreen({ route, navigation }) {
             <Text style={[styles.sectionTitle, { color: theme.text }]}>
               Ground Photos & Videos
             </Text>
-            <Text style={[styles.sectionSubtitle, { color: theme.textSecondary }]}>
-              Add up to {MediaService.maxImages} photos and {MediaService.maxVideos} videos to showcase your ground
+            <Text
+              style={[styles.sectionSubtitle, { color: theme.textSecondary }]}
+            >
+              Add up to {MediaService.maxImages} photos and{" "}
+              {MediaService.maxVideos} videos to showcase your ground
             </Text>
-            
+
             {/* Images Grid */}
-            {images.length > 0 && (
+            {images?.length > 0 && (
               <View style={styles.mediaSection}>
                 <Text style={[styles.mediaSectionTitle, { color: theme.text }]}>
-                  Photos ({images.length}/{MediaService.maxImages})
+                  Photos ({images?.length}/{MediaService.maxImages})
                 </Text>
                 <FlatList
                   data={images}
@@ -591,7 +718,7 @@ export default function AddEditGroundScreen({ route, navigation }) {
                 />
               </View>
             )}
-            
+
             <Menu
               visible={showMediaMenu}
               onDismiss={() => setShowMediaMenu(false)}
@@ -602,7 +729,8 @@ export default function AddEditGroundScreen({ route, navigation }) {
                   icon="camera-plus"
                   variant="outline"
                 >
-                  Add Media ({images.length + videos.length}/{MediaService.maxImages + MediaService.maxVideos})
+                  Add Media ({images?.length + videos.length}/
+                  {MediaService.maxImages + MediaService.maxVideos})
                 </ThemedButton>
               }
             >
@@ -614,7 +742,7 @@ export default function AddEditGroundScreen({ route, navigation }) {
               <Menu.Item
                 onPress={handleAddVideos}
                 title="Choose Videos from Gallery"
-                leadingIcon="video-multiple"
+                leadingIcon="video"
               />
               <Menu.Item
                 onPress={handleCapturePhoto}
@@ -628,22 +756,24 @@ export default function AddEditGroundScreen({ route, navigation }) {
               />
             </Menu>
 
-            {(images.length > 0 || videos.length > 0) && uploadingMedia && (
+            {(images?.length > 0 || videos.length > 0) && uploadingMedia && (
               <View style={styles.uploadProgress}>
                 <ActivityIndicator size="small" color={theme.primary} />
-                <Text style={[styles.uploadText, { color: theme.textSecondary }]}>
+                <Text
+                  style={[styles.uploadText, { color: theme.textSecondary }]}
+                >
                   Uploading media files...
                 </Text>
               </View>
             )}
           </ThemedCard>
-        
+
           {/* Basic Details Section */}
           <ThemedCard style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>
               Basic Details
             </Text>
-            
+
             <TextInput
               label="Ground Name"
               value={name}
@@ -655,7 +785,7 @@ export default function AddEditGroundScreen({ route, navigation }) {
             <HelperText type="error" visible={!!nameError}>
               {nameError}
             </HelperText>
-            
+
             <TextInput
               label="Location"
               value={location}
@@ -667,7 +797,7 @@ export default function AddEditGroundScreen({ route, navigation }) {
             <HelperText type="error" visible={!!locationError}>
               {locationError}
             </HelperText>
-            
+
             <TextInput
               label="Price per Hour (₹)"
               value={price}
@@ -692,10 +822,10 @@ export default function AddEditGroundScreen({ route, navigation }) {
               value={turfType}
               onValueChange={setTurfType}
               buttons={[
-                { value: 'mat', label: 'Mat' },
-                { value: 'astro', label: 'Astro' },
-                { value: 'grass', label: 'Grass' },
-                { value: 'synthetic', label: 'Synthetic' }
+                { value: "mat", label: "Mat" },
+                { value: "astro", label: "Astro" },
+                { value: "grass", label: "Grass" },
+                { value: "synthetic", label: "Synthetic" },
               ]}
               style={styles.segmentedButton}
             />
@@ -709,16 +839,22 @@ export default function AddEditGroundScreen({ route, navigation }) {
             <Text style={[styles.sectionTitle, { color: theme.text }]}>
               Facilities Available
             </Text>
-            <Text style={[styles.sectionSubtitle, { color: theme.textSecondary }]}>
+            <Text
+              style={[styles.sectionSubtitle, { color: theme.textSecondary }]}
+            >
               Select facilities available at your ground
             </Text>
-            
+
             <View style={styles.facilitiesContainer}>
               {availableFacilities.map((facility) => (
                 <Chip
                   key={facility}
                   selected={facilities.includes(facility)}
-                  onPress={() => facilities.includes(facility) ? removeFacility(facility) : addFacility(facility)}
+                  onPress={() =>
+                    facilities.includes(facility)
+                      ? removeFacility(facility)
+                      : addFacility(facility)
+                  }
                   style={styles.facilityChip}
                   textStyle={{ fontSize: 12 }}
                 >
@@ -744,7 +880,7 @@ export default function AddEditGroundScreen({ route, navigation }) {
               placeholder="Describe special features, location details, or any other information..."
             />
           </ThemedCard>
-          
+
           <View style={styles.buttonContainer}>
             <ThemedButton
               mode="contained"
@@ -754,12 +890,15 @@ export default function AddEditGroundScreen({ route, navigation }) {
               icon={isEditing ? "content-save" : "plus"}
               variant="primary"
             >
-              {loading || uploadingMedia 
-                ? (uploadingMedia ? 'Uploading Media...' : 'Saving...') 
-                : (isEditing ? 'Update Ground' : 'Add Ground')
-              }
+              {loading || uploadingMedia
+                ? uploadingMedia
+                  ? "Uploading Media..."
+                  : "Saving..."
+                : isEditing
+                ? "Update Ground"
+                : "Add Ground"}
             </ThemedButton>
-            
+
             <ThemedButton
               mode="outlined"
               onPress={() => navigation.goBack()}
@@ -784,25 +923,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContainer: {
-    padding: 16,
+    padding: 0,
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   loadingText: {
-    marginTop: 16,
+    marginTop: 15,
     fontSize: 16,
-    color: '#555',
+    color: "#555",
   },
   section: {
-    marginBottom: 16,
-    padding: 16,
+    marginBottom: 10,
+    // padding: 10,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 8,
   },
   sectionSubtitle: {
@@ -818,61 +957,61 @@ const styles = StyleSheet.create({
   },
   mediaSectionTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 8,
   },
   mediaCard: {
     flex: 1,
     margin: 4,
     padding: 8,
-    position: 'relative',
+    position: "relative",
   },
   mediaImage: {
-    width: '100%',
+    width: "100%",
     height: 120,
     borderRadius: 8,
     marginBottom: 8,
   },
   videoContainer: {
-    position: 'relative',
+    position: "relative",
   },
   videoOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
     borderRadius: 8,
   },
   removeButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 4,
     right: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     margin: 0,
   },
   mediaInfo: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   mediaName: {
     fontSize: 12,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 2,
   },
   mediaSize: {
     fontSize: 10,
-    textAlign: 'center',
+    textAlign: "center",
   },
   uploadProgress: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: 16,
     padding: 12,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    backgroundColor: "rgba(0, 0, 0, 0.05)",
     borderRadius: 8,
   },
   uploadText: {
@@ -880,12 +1019,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   input: {
-    marginBottom: 8,
+    marginBottom: 0,
   },
   facilitiesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 5,
   },
   facilityChip: {
     marginBottom: 8,
@@ -895,7 +1034,8 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     marginTop: 24,
-    gap: 12,
+    // gap: 12,
+    marginHorizontal: 16,
   },
   cancelButton: {
     marginTop: 8,

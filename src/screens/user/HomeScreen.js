@@ -291,7 +291,11 @@ export default function HomeScreen({ navigation }) {
       <FlatList
         data={filteredVenues}
         renderItem={({ item }) => (
-          <VenueCard venue={item} onPress={() => handleVenuePress(item)} />
+          <VenueCard
+            venue={item}
+            onPress={() => handleVenuePress(item)}
+            navigation={navigation}
+          />
         )}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[
