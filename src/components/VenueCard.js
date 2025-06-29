@@ -207,6 +207,8 @@ const VenueCard = ({ venue, navigation, onPress }) => {
     return null;
   }
 
+  console.log(JSON.stringify(venue, null, 2));
+
   return (
     <ThemedCard style={styles.card} elevation={3} onPress={onPress}>
       <View>

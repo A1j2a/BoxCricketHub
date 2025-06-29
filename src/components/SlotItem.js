@@ -6,12 +6,11 @@ import dayjs from 'dayjs';
 
 export default function SlotItem({ slot, onBook, onDelete, isAdmin = false }) {
   // Format time slot for display
-  const formatTimeSlot = (startTime, endTime) => {
-    const start = startTime.slice(0, 5); // HH:MM format
-    const end = endTime.slice(0, 5);     // HH:MM format
-    return `${start} - ${end}`;
-  };
-
+const formatTimeSlot = (startTime, endTime) => {
+  const start = dayjs(startTime, "HH:mm:ss").format("hh:mm A");
+  const end = dayjs(endTime, "HH:mm:ss").format("hh:mm A");
+  return `${start} - ${end}`;
+};
   // Calculate duration in hours
   const calculateHours = () => {
     const start = dayjs(`2000-01-01 ${slot.start_time}`);

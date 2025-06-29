@@ -101,11 +101,11 @@ export default function VenueDetailScreen({ route, navigation }) {
   }, [selectedDate]);
   
   // Format time slot for display
-  const formatTimeSlot = (startTime, endTime) => {
-    const start = startTime.slice(0, 5); // HH:MM format
-    const end = endTime.slice(0, 5);     // HH:MM format
-    return `${start} - ${end}`;
-  };
+const formatTimeSlot = (startTime, endTime) => {
+  const start = dayjs(startTime, "HH:mm:ss").format("hh:mm A");
+  const end = dayjs(endTime, "HH:mm:ss").format("hh:mm A");
+  return `${start} - ${end}`;
+};
   
   // Navigate to booking screen
   const handleBookSlot = (slot) => {

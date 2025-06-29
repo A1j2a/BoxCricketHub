@@ -37,23 +37,19 @@ export default function MyBookingsScreen({ navigation }) {
     try {
       setLoading(true);
       setError(null);
-      
+
       if (!user) return;
-      
+
       const { data, error } = await supabase
-        .from('bookings')
-        .select(`
-          *,
-          slots(*, grounds(*))
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-        
+        .from("bookings")
+        .select("*")
+        .eq("user_id", user.id);
+
       if (error) throw error;
-      
+
       setBookings(data || []);
     } catch (error) {
-      console.error('Error fetching bookings:', error.message);
+      console.error("Error fetching bookings:---", error.message);
       setError('Failed to load your bookings. Please try again.');
     } finally {
       setLoading(false);

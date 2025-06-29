@@ -1,21 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, 
-  View, 
-  ScrollView, 
-  KeyboardAvoidingView, 
-  Platform, 
+import React, { useState, useEffect } from "react";
+import {
+  StyleSheet,
+  View,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
   Image,
   Alert,
   TouchableOpacity,
   FlatList,
-  Dimensions
-} from 'react-native';
-import { 
-  TextInput, 
-  Button, 
-  Title, 
-  HelperText, 
+  Dimensions,
+} from "react-native";
+import {
+  TextInput,
+  Button,
+  Title,
+  HelperText,
   Divider,
   SegmentedButtons,
   ActivityIndicator,
@@ -26,20 +26,20 @@ import {
   Surface,
   Menu,
   Modal,
-  Portal
-} from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { supabase } from '../../config/supabase';
-import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
-import ErrorComponent from '../../components/ErrorComponent';
-import MediaService from '../../services/MediaService';
-import RazorpayService from '../../services/RazorpayService';
-import ModernHeader from '../../components/ui/ModernHeader';
-import ThemedButton from '../../components/ui/ThemedButton';
-import ThemedCard from '../../components/ui/ThemedCard';
+  Portal,
+} from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { supabase } from "../../config/supabase";
+import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
+import ErrorComponent from "../../components/ErrorComponent";
+import MediaService from "../../services/MediaService";
+import RazorpayService from "../../services/RazorpayService";
+import ModernHeader from "../../components/ui/ModernHeader";
+import ThemedButton from "../../components/ui/ThemedButton";
+import ThemedCard from "../../components/ui/ThemedCard";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 
 export default function AddEditGroundScreen({ route, navigation }) {
   const { groundId, ground } = route.params || {};
@@ -406,9 +406,23 @@ export default function AddEditGroundScreen({ route, navigation }) {
         return { images: [], videos: [] };
       }
 
-      // Upload to Supabase
+      // ✅ Convert files to blobs before uploading
+      const filesWithBlob = await Promise.all(
+        allFiles.map(async (file) => {
+          try {
+            const response = await fetch(file.uri);
+            const blob = await response.blob();
+            return { ...file, blob };
+          } catch (err) {
+            console.error("Failed to fetch blob for:", file.uri);
+            return { ...file, blob: null };
+          }
+        })
+      );
+
+      // ✅ Upload to Supabase with blobs
       const uploadedFiles = await MediaService.uploadToSupabase(
-        allFiles,
+        filesWithBlob,
         "ground-media",
         user.id
       );

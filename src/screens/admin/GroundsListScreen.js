@@ -185,6 +185,8 @@ export default function GroundsListScreen({ navigation }) {
 
   // Render ground card
   const renderGroundCard = ({ item }) => {
+    console.log("Rendering ground:", item);
+    
     // Use first image from images array or fallback to item.image_url or placeholder
     const coverImage =
       item.images && item.images.length > 0

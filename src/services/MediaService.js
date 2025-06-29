@@ -138,7 +138,7 @@ class MediaService {
 
     try {
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: [ImagePicker.MediaType.Images],
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 0.8,
         aspect: [16, 9],
         allowsEditing: true,

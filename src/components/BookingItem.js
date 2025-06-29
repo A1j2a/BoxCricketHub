@@ -1,96 +1,145 @@
 import React from 'react';
-import { StyleSheet, View, TouchableOpacity, Linking } from 'react-native';
-import { Card, Title, Text, Button, Chip, Divider, Avatar } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import dayjs from 'dayjs';
+import { StyleSheet, View } from "react-native";
+import { Card, Title, Text, Button, Chip, Divider } from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import dayjs from "dayjs";
 
 export default function BookingItem({ booking, onCancel }) {
-  // Access nested data safely
-  const venue = booking?.slots?.grounds || {};
-  const slot = booking?.slots || {};
-  
   // Format date
-  const formattedDate = dayjs(slot.date).format('ddd, MMM D, YYYY');
-  
-  // Format time
+  const formattedDate = dayjs(booking.date).format("ddd, MMM D, YYYY");
+
+  // Format time to AM/PM
   const formatTime = (time) => {
-    return time ? time.slice(0, 5) : ''; // HH:MM format
+    if (!time) return "Invalid";
+    const date = dayjs(`2000-01-01T${time}`);
+    return date.isValid() ? date.format("hh:mm A") : "Invalid";
   };
-  
-  // Get status color and icon
+  const formattedTime = `${formatTime(booking.start_time)} - ${formatTime(
+    booking.end_time
+  )}`;
+
+  // Status UI styles
   const getStatusStyles = (status) => {
     switch (status) {
-      case 'confirmed':
+      case "confirmed":
         return {
-          icon: 'check-circle',
-          color: '#4CAF50',
-          bgColor: '#E8F5E9',
-          text: 'Confirmed'
+          icon: "check-circle",
+          color: "#4CAF50",
+          bgColor: "#E8F5E9",
+          text: "Confirmed",
         };
-      case 'cancelled':
+      case "cancelled":
         return {
-          icon: 'close-circle',
-          color: '#F44336',
-          bgColor: '#FFEBEE',
-          text: 'Cancelled'
+          icon: "close-circle",
+          color: "#F44336",
+          bgColor: "#FFEBEE",
+          text: "Cancelled",
         };
-      case 'pending':
+      case "pending":
       default:
         return {
-          icon: 'clock-outline',
-          color: '#FFC107',
-          bgColor: '#FFF8E1',
-          text: 'Pending'
+          icon: "clock-outline",
+          color: "#FFC107",
+          bgColor: "#FFF8E1",
+          text: "Pending",
         };
     }
   };
-  
+
   const statusStyles = getStatusStyles(booking.status);
-  
-  // Check if booking can be cancelled
-  const canBeCancelled = booking.status !== 'cancelled' && dayjs(slot.date).isAfter(dayjs(), 'day');
-  
+
+  const canBeCancelled =
+    booking.status !== "cancelled" &&
+    dayjs(booking.date).isAfter(dayjs(), "day");
+
   return (
     <Card style={styles.card}>
       <Card.Content>
         <View style={styles.headerRow}>
           <View style={styles.venueInfo}>
-            <Title style={styles.venueTitle}>{venue.name || 'Unknown Venue'}</Title>
-            <Text style={styles.locationText} numberOfLines={1}>
-              <MaterialCommunityIcons name="map-marker" size={14} color="#666" />
-              {' ' + (venue.location || 'Unknown location')}
+            <Title style={styles.venueTitle}>
+              {booking.title || "Untitled Booking"}
+            </Title>
+            {/* If location is still needed, you can pass it separately */}
+            <Text style={styles.locationText}>
+              <MaterialCommunityIcons
+                name="map-marker"
+                size={14}
+                color="#666"
+              />{" "}
+              Some Location
             </Text>
           </View>
-          <Chip 
-            icon={() => <MaterialCommunityIcons name={statusStyles.icon} size={16} color={statusStyles.color} />}
-            style={[styles.statusChip, { backgroundColor: statusStyles.bgColor }]}
+          <Chip
+            icon={() => (
+              <MaterialCommunityIcons
+                name={statusStyles.icon}
+                size={16}
+                color={statusStyles.color}
+              />
+            )}
+            style={[
+              styles.statusChip,
+              { backgroundColor: statusStyles.bgColor },
+            ]}
+            textStyle={{ color: statusStyles.color }}
           >
             {statusStyles.text}
           </Chip>
         </View>
-        
+
         <Divider style={styles.divider} />
-        
+
         <View style={styles.detailsContainer}>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Date:</Text>
             <Text style={styles.detailValue}>{formattedDate}</Text>
           </View>
-          
+
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Time:</Text>
-            <Text style={styles.detailValue}>
-              {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
-            </Text>
+            <Text style={styles.detailValue}>{formattedTime}</Text>
           </View>
-          
+
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Price:</Text>
-            <Text style={styles.detailValue}>
-              ₹{venue.price_per_hour || '0'} per hour
+            <Text style={styles.detailValue}>₹{booking.price}</Text>
+          </View>
+
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Mode:</Text>
+            <Text style={styles.detailValue}>{booking.payment_mode}</Text>
+          </View>
+
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Payment:</Text>
+            <Text
+              style={[
+                styles.detailValue,
+                {
+                  color:
+                    booking.payment_status === "completed"
+                      ? "#4CAF50"
+                      : booking.payment_status === "failed"
+                      ? "#F44336"
+                      : "#FFC107",
+                },
+              ]}
+            >
+              {booking.payment_status?.charAt(0).toUpperCase() +
+                booking.payment_status?.slice(1)}
             </Text>
           </View>
-          
+
+          {booking.razorpay_payment_id && (
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Txn ID:</Text>
+              <Text style={styles.detailValue} numberOfLines={1}>
+                {booking.razorpay_payment_id}
+              </Text>
+            </View>
+          )}
+
           {booking.notes && (
             <View style={styles.notesContainer}>
               <Text style={styles.notesLabel}>Notes:</Text>
@@ -98,10 +147,10 @@ export default function BookingItem({ booking, onCancel }) {
             </View>
           )}
         </View>
-        
+
         {canBeCancelled && (
-          <Button 
-            mode="outlined" 
+          <Button
+            mode="outlined"
             onPress={onCancel}
             style={styles.cancelButton}
             icon="close-circle"
@@ -121,9 +170,9 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: 12,
   },
   venueInfo: {
@@ -135,7 +184,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   locationText: {
-    color: '#666',
+    color: "#666",
     fontSize: 14,
   },
   statusChip: {
@@ -148,35 +197,37 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   detailRow: {
-    flexDirection: 'row',
-    marginBottom: 8,
+    flexDirection: "row",
+    marginBottom: 6,
   },
   detailLabel: {
-    width: 60,
-    color: '#666',
+    width: 90,
+    color: "#666",
+    fontWeight: "500",
   },
   detailValue: {
     flex: 1,
-    fontWeight: '500',
+    fontWeight: "500",
+    color: "#333",
   },
   notesContainer: {
     marginTop: 8,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: "#f9f9f9",
     padding: 12,
     borderRadius: 4,
   },
   notesLabel: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
     marginBottom: 4,
-    color: '#666',
+    color: "#666",
   },
   notesText: {
     fontSize: 14,
-    color: '#444',
+    color: "#444",
   },
   cancelButton: {
-    borderColor: '#F44336',
+    borderColor: "#F44336",
     marginTop: 8,
-  }
+  },
 });
