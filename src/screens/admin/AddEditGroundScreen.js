@@ -406,23 +406,9 @@ export default function AddEditGroundScreen({ route, navigation }) {
         return { images: [], videos: [] };
       }
 
-      // ✅ Convert files to blobs before uploading
-      const filesWithBlob = await Promise.all(
-        allFiles.map(async (file) => {
-          try {
-            const response = await fetch(file.uri);
-            const blob = await response.blob();
-            return { ...file, blob };
-          } catch (err) {
-            console.error("Failed to fetch blob for:", file.uri);
-            return { ...file, blob: null };
-          }
-        })
-      );
-
-      // ✅ Upload to Supabase with blobs
+      // Upload to Supabase
       const uploadedFiles = await MediaService.uploadToSupabase(
-        filesWithBlob,
+        allFiles,
         "ground-media",
         user.id
       );
@@ -474,7 +460,7 @@ export default function AddEditGroundScreen({ route, navigation }) {
     } finally {
       setUploadingMedia(false);
     }
-  };
+  }; 
 
   // Save ground data
   const saveGround = async () => {
